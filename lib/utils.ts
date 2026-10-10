@@ -70,6 +70,25 @@ export function formatRatioPct(value?: number | null, decimals = 2): string {
   return `${withUnicodeMinus(pct)} %`
 }
 
+// Signed delta of two 0-1 weights in percentage points, 1 decimal
+// (e.g. +10,0 pp). A delta that rounds to zero carries no sign.
+export function formatPp(value?: number | null): string {
+  if (value == null) return '—'
+  const magnitude = new Intl.NumberFormat('es-ES', {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  }).format(Math.abs(value * 100))
+  if (!/[1-9]/.test(magnitude)) return `${magnitude} pp`
+  return `${value < 0 ? '−' : '+'}${magnitude} pp`
+}
+
+// EUR amount with an explicit "+" for positives (negatives keep U+2212);
+// an amount that rounds to zero carries no sign.
+export function formatEurSigned(value?: number | null): string {
+  const formatted = formatEur(value)
+  return value != null && value > 0 && /[1-9]/.test(formatted) ? `+${formatted}` : formatted
+}
+
 // Privacy mode placeholder: never derived from the real amount (always
 // formats 0), so it cannot leak magnitude or sign. Extracts just the
 // currency symbol/suffix by stripping digits/separators from the 0-amount

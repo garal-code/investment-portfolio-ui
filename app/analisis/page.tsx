@@ -9,9 +9,12 @@ import { CifrasClave } from '@/components/analisis/CifrasClave'
 import { ExclusionesNotice } from '@/components/analisis/ExclusionesNotice'
 import { PesosTable } from '@/components/analisis/PesosTable'
 import { DetalleCalculo } from '@/components/analisis/DetalleCalculo'
+import { MovimientosTable } from '@/components/analisis/MovimientosTable'
 import { useFronteraEficiente } from '@/hooks/useCartera'
 import { useActiveCartera } from '@/contexts/CarteraContext'
 import { formatFecha, getFronteraErrorMessage } from '@/lib/utils'
+import { defaultFrontierIndex } from '@/lib/rebalanceo'
+import type { FronteraEficiente } from '@/types'
 
 type Horizonte = '3' | '5' | '10'
 
@@ -32,6 +35,20 @@ export default function AnalisisPage() {
   const { carteraId, isLoading: carteraLoading } = useActiveCartera()
   const [horizonte, setHorizonte] = useState<Horizonte>('5')
   const { data: frontera, isLoading, isError, error } = useFronteraEficiente(carteraId, Number(horizonte))
+
+  // The chosen frontier point belongs to the response it was picked on: a new
+  // response (another horizon, a refetch after a movement) falls back to the
+  // default point, the one closest in volatility to the current portfolio.
+  const [seleccion, setSeleccion] = useState<{ frontera: FronteraEficiente; index: number } | null>(null)
+  const selectedIndex = frontera
+    ? seleccion?.frontera === frontera
+      ? seleccion.index
+      : defaultFrontierIndex(frontera.frontera, frontera.cartera_actual)
+    : null
+  const objetivo = frontera && selectedIndex != null ? frontera.frontera[selectedIndex] : undefined
+  const handleSelect = (index: number) => {
+    if (frontera) setSeleccion({ frontera, index })
+  }
 
   return (
     <AppShell>
@@ -89,7 +106,8 @@ export default function AnalisisPage() {
                   Riesgo y rentabilidad
                 </h2>
                 <p style={{ fontSize: 13, color: 'var(--color-muted)' }}>
-                  Cada punto de la frontera es la cartera con menor volatilidad para su rentabilidad esperada
+                  Cada punto de la frontera es la cartera con menor volatilidad para su rentabilidad esperada.
+                  Elige un punto en el gráfico o con el control de riesgo objetivo para ver cómo llegar a él.
                 </p>
               </div>
               <FronteraChart
@@ -97,8 +115,19 @@ export default function AnalisisPage() {
                 minimaVarianza={frontera.cartera_minima_varianza}
                 actual={frontera.cartera_actual}
                 tickers={frontera.tickers}
+                selectedIndex={selectedIndex}
+                onSelect={handleSelect}
               />
             </section>
+
+            {objetivo && (
+              <MovimientosTable
+                tickers={frontera.tickers}
+                actual={frontera.cartera_actual}
+                objetivo={objetivo}
+                valoresEur={frontera.detalle.cartera_actual.valores_eur}
+              />
+            )}
 
             <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
               <CifrasClave actual={frontera.cartera_actual} minimaVarianza={frontera.cartera_minima_varianza} />

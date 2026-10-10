@@ -2,6 +2,7 @@ import { AxiosError, AxiosHeaders, type AxiosResponse } from 'axios'
 import { describe, expect, it } from 'vitest'
 import {
   formatEur, formatCurrency, formatPct, formatPeso, formatRatioPct, formatNum, formatMes, maskAmount,
+  formatPp, formatEurSigned,
   TREEMAP_COLORS, treemapColor,
   getErrorStatus, getFronteraErrorMessage,
 } from './utils'
@@ -74,6 +75,30 @@ describe('formatRatioPct — unsigned fraction as a 2-decimal percentage', () =>
   it('returns an em dash placeholder for null/undefined', () => {
     expect(formatRatioPct(null)).toBe('—')
     expect(formatRatioPct(undefined)).toBe('—')
+  })
+})
+
+describe('formatPp — signed weight delta in percentage points', () => {
+  it('converts a 0-1 fraction delta into signed 1-decimal points', () => {
+    expect(formatPp(0.1)).toBe('+10,0 pp')
+    expect(formatPp(-0.0525)).toBe('−5,3 pp')
+  })
+
+  it('renders zero, or a delta that rounds to zero, without sign', () => {
+    expect(formatPp(0)).toBe('0,0 pp')
+    expect(formatPp(-0.0004)).toBe('0,0 pp')
+  })
+})
+
+describe('formatEurSigned — EUR amount with explicit sign', () => {
+  it('prefixes positive amounts with "+" and keeps U+2212 for negatives', () => {
+    expect(formatEurSigned(1250)).toBe('+1.250,00 €')
+    expect(formatEurSigned(-3100)).toBe('−3.100,00 €')
+  })
+
+  it('renders an amount that rounds to zero without sign', () => {
+    expect(formatEurSigned(0.001)).toBe('0,00 €')
+    expect(formatEurSigned(-0.001)).toBe('0,00 €')
   })
 })
 

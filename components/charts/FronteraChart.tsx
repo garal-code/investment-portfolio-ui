@@ -1,11 +1,12 @@
 'use client'
+import { useId } from 'react'
 import {
   CartesianGrid, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis, ZAxis,
 } from 'recharts'
 import { formatNum, formatPct, formatPeso, formatRatioPct } from '@/lib/utils'
 import type { PuntoCartera } from '@/types'
 
-export type SerieFrontera = 'frontera' | 'minima' | 'actual'
+export type SerieFrontera = 'frontera' | 'minima' | 'actual' | 'elegido'
 
 export interface FronteraChartPoint {
   volatilidad: number   // monthly, in %
@@ -18,7 +19,12 @@ const SERIES: Record<SerieFrontera, { label: string; tooltip: string; color: str
   frontera: { label: 'Frontera eficiente', tooltip: 'Cartera de la frontera', color: '#2D6A5A' },
   minima: { label: 'Mínima varianza', tooltip: 'Mínima varianza', color: '#c4956a' },
   actual: { label: 'Cartera actual', tooltip: 'Cartera actual', color: '#8a3a6a' },
+  elegido: { label: 'Punto elegido', tooltip: 'Punto elegido', color: '#221e1a' },
 }
+
+// Five-pointed star, matching recharts' `star` symbol in the HTML legend.
+const STAR_CLIP_PATH =
+  'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)'
 
 export function toChartPoint(punto: PuntoCartera, serie: SerieFrontera): FronteraChartPoint {
   return {
@@ -90,15 +96,28 @@ interface FronteraChartProps {
   minimaVarianza: PuntoCartera
   actual: PuntoCartera
   tickers: string[]
+  // Index into `frontera` of the chosen target portfolio. Selection (click on
+  // a frontier point, "Riesgo objetivo" slider, highlighted marker) is only
+  // enabled when `onSelect` is provided.
+  selectedIndex?: number | null
+  onSelect?: (index: number) => void
 }
 
 // Risk/return plane: X = monthly volatility, Y = expected monthly return,
 // both in %. The frontier is drawn as a joint line through its points, with
 // the min-variance and current portfolios as distinct markers on top.
-export function FronteraChart({ frontera, minimaVarianza, actual, tickers }: FronteraChartProps) {
+export function FronteraChart({
+  frontera, minimaVarianza, actual, tickers, selectedIndex, onSelect,
+}: FronteraChartProps) {
+  const sliderId = useId()
   const fronteraData = frontera.map(p => toChartPoint(p, 'frontera'))
   const minimaData = [toChartPoint(minimaVarianza, 'minima')]
   const actualData = [toChartPoint(actual, 'actual')]
+  const elegido = onSelect && selectedIndex != null ? frontera[selectedIndex] : undefined
+  const elegidoText = elegido
+    ? `Volatilidad mensual ${formatRatioPct(elegido.volatilidad)}, rentabilidad ${formatPct(elegido.rentabilidad * 100)}`
+    : ''
+  const series = (Object.keys(SERIES) as SerieFrontera[]).filter(serie => serie !== 'elegido' || elegido)
 
   return (
     <div className="flex flex-col gap-3">
@@ -129,6 +148,7 @@ export function FronteraChart({ frontera, minimaVarianza, actual, tickers }: Fro
             />
             <ZAxis range={[36, 36]} />
             <ZAxis zAxisId="marker" range={[150, 150]} />
+            <ZAxis zAxisId="elegido" range={[300, 300]} />
             <Tooltip
               cursor={{ strokeDasharray: '3 3', stroke: '#a09080' }}
               content={props => <FronteraTooltip active={props.active} payload={props.payload} tickers={tickers} />}
@@ -139,6 +159,9 @@ export function FronteraChart({ frontera, minimaVarianza, actual, tickers }: Fro
               fill={SERIES.frontera.color}
               line={{ stroke: SERIES.frontera.color, strokeWidth: 2 }}
               lineType="joint"
+              className="frontera-puntos"
+              cursor={onSelect ? 'pointer' : undefined}
+              onClick={onSelect ? (_, index) => onSelect(index) : undefined}
               isAnimationActive={false}
             />
             <Scatter
@@ -157,21 +180,54 @@ export function FronteraChart({ frontera, minimaVarianza, actual, tickers }: Fro
               shape="circle"
               isAnimationActive={false}
             />
+            {elegido && (
+              <Scatter
+                name={SERIES.elegido.label}
+                data={[toChartPoint(elegido, 'elegido')]}
+                zAxisId="elegido"
+                fill={SERIES.elegido.color}
+                shape="star"
+                className="frontera-elegido"
+                isAnimationActive={false}
+              />
+            )}
           </ScatterChart>
         </ResponsiveContainer>
       </div>
 
+      {elegido && selectedIndex != null && (
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[13px]">
+          <label htmlFor={sliderId} className="font-medium">Riesgo objetivo</label>
+          <input
+            id={sliderId}
+            type="range"
+            min={0}
+            max={frontera.length - 1}
+            step={1}
+            value={selectedIndex}
+            onChange={event => onSelect?.(Number(event.target.value))}
+            aria-valuetext={elegidoText}
+            className="min-w-[160px] flex-1"
+            style={{ accentColor: 'var(--color-primary)', cursor: 'pointer' }}
+          />
+          <output htmlFor={sliderId} className="tabular-nums" style={{ fontSize: 12, color: '#6a5a4a' }}>
+            {elegidoText}
+          </output>
+        </div>
+      )}
+
       <ul aria-label="Leyenda" className="flex flex-wrap gap-x-5 gap-y-1.5 text-[12px]" style={{ color: '#6a5a4a' }}>
-        {(Object.keys(SERIES) as SerieFrontera[]).map(serie => (
+        {series.map(serie => (
           <li key={serie} className="flex items-center gap-2">
             <span
               aria-hidden="true"
               style={{
-                width: serie === 'frontera' ? 16 : 9,
-                height: serie === 'frontera' ? 2 : 9,
+                width: serie === 'frontera' ? 16 : serie === 'elegido' ? 12 : 9,
+                height: serie === 'frontera' ? 2 : serie === 'elegido' ? 12 : 9,
                 background: SERIES[serie].color,
                 borderRadius: serie === 'actual' ? '50%' : 1,
                 transform: serie === 'minima' ? 'rotate(45deg)' : undefined,
+                clipPath: serie === 'elegido' ? STAR_CLIP_PATH : undefined,
               }}
             />
             {SERIES[serie].label}

@@ -56,12 +56,13 @@ describe('AnalisisPage — result', () => {
   it('lists current vs minimum-variance weights and EUR value per ticker', async () => {
     renderPage()
 
-    const aapl = await screen.findByRole('row', { name: /AAPL/ })
+    const pesos = await screen.findByRole('region', { name: 'Pesos por activo' })
+    const aapl = within(pesos).getByRole('row', { name: /AAPL/ })
     expect(within(aapl).getByText('5.200,00 €')).toBeInTheDocument()
     expect(within(aapl).getByText('52,0 %')).toBeInTheDocument()
     expect(within(aapl).getByText('62,0 %')).toBeInTheDocument()
 
-    const san = screen.getByRole('row', { name: /SAN\.MC/ })
+    const san = within(pesos).getByRole('row', { name: /SAN\.MC/ })
     expect(within(san).getByText('17,0 %')).toBeInTheDocument()
     expect(within(san).getByText('12,0 %')).toBeInTheDocument()
   })
@@ -112,6 +113,74 @@ describe('AnalisisPage — result', () => {
 
     await screen.findByText(/13 observaciones mensuales/)
     expect(screen.queryByRole('region', { name: 'Activos excluidos del cálculo' })).not.toBeInTheDocument()
+  })
+})
+
+describe('AnalisisPage — rebalancing moves', () => {
+  const MOVES = 'Movimientos para llegar al punto elegido'
+
+  it('preselects the frontier point closest in volatility and shows the moves to reach it', async () => {
+    renderPage()
+
+    const slider = await screen.findByRole('slider', { name: 'Riesgo objetivo' })
+    expect(slider).toHaveValue('0')
+
+    const table = screen.getByRole('table', { name: MOVES })
+    const aapl = within(table).getByRole('row', { name: /AAPL/ })
+    expect(within(aapl).getByText('62,0 %')).toBeInTheDocument()
+    expect(within(aapl).getByText('+10,0 pp')).toBeInTheDocument()
+    expect(within(aapl).getByText('+1.000,00 €')).toBeInTheDocument()
+    expect(within(aapl).getByText('Comprar')).toBeInTheDocument()
+    const msft = within(table).getByRole('row', { name: /MSFT/ })
+    expect(within(msft).getByText('−500,00 €')).toBeInTheDocument()
+    expect(within(msft).getByText('Vender')).toBeInTheDocument()
+  })
+
+  it('places the moves right after the chart and before the key figures', async () => {
+    renderPage()
+
+    const moves = await screen.findByRole('region', { name: MOVES })
+    const chart = screen.getByRole('region', { name: 'Riesgo y rentabilidad' })
+    const cifras = screen.getByRole('region', { name: 'Cifras clave' })
+    expect(chart.compareDocumentPosition(moves) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(moves.compareDocumentPosition(cifras) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('updates target weights and amounts when the slider moves', async () => {
+    renderPage()
+
+    const slider = await screen.findByRole('slider', { name: 'Riesgo objetivo' })
+    fireEvent.change(slider, { target: { value: '2' } })
+
+    expect(slider).toHaveValue('2')
+    const table = screen.getByRole('table', { name: MOVES })
+    const aapl = within(table).getByRole('row', { name: /AAPL/ })
+    expect(within(aapl).getByText('64,5 %')).toBeInTheDocument()
+    expect(within(aapl).getByText('+1.250,00 €')).toBeInTheDocument()
+    const msft = within(table).getByRole('row', { name: /MSFT/ })
+    expect(within(msft).getByText('−31,0 pp')).toBeInTheDocument()
+    expect(within(msft).getByText('−3.100,00 €')).toBeInTheDocument()
+  })
+
+  it('resets the selection to the default when the horizon changes', async () => {
+    renderPage()
+
+    const slider = await screen.findByRole('slider', { name: 'Riesgo objetivo' })
+    fireEvent.change(slider, { target: { value: '4' } })
+    expect(slider).toHaveValue('4')
+
+    fireEvent.click(screen.getByRole('tab', { name: '10 años' }))
+
+    await waitFor(() => expect(screen.getByRole('slider', { name: 'Riesgo objetivo' })).toHaveValue('0'))
+  })
+
+  it('shows no moves when the frontier is empty', async () => {
+    respondWith({ ...fronteraEficienteFixture, frontera: [] })
+    renderPage()
+
+    await screen.findByText(/13 observaciones mensuales/)
+    expect(screen.queryByRole('slider')).not.toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: MOVES })).not.toBeInTheDocument()
   })
 })
 
