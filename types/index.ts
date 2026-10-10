@@ -132,6 +132,68 @@ export interface RentabilidadCartera {
   tickers_sin_dato: string[]
 }
 
+// ── Frontera eficiente (Markowitz) ────────────────────────────────────────────
+// All figures are monthly (not annualised). Arrays and matrices are ordered by
+// `FronteraEficiente.tickers`.
+
+export interface PuntoCartera {
+  rentabilidad: number
+  volatilidad: number
+  varianza: number
+  pesos: Record<string, number>   // ticker -> weight, sums to 1
+}
+
+export type MotivoExclusion =
+  | 'sin_ticker'
+  | 'sin_precio_actual'
+  | 'sin_historico'
+  | 'historico_insuficiente'
+
+export interface ActivoExcluido {
+  ticker: string      // ISIN when the instrument has no ticker
+  motivo: MotivoExclusion
+}
+
+export interface DatosEntradaFrontera {
+  fechas_precios: string[]       // one more month than `fechas`
+  precios: number[][]            // [fechas_precios][tickers], native currency
+  fechas: string[]
+  rentabilidades: number[][]     // [fechas][tickers]
+}
+
+export interface EstadisticasActivos {
+  varianzas: number[]
+  volatilidades: number[]
+  matriz_correlaciones: number[][]
+}
+
+export interface DetalleCarteraActual {
+  valores_eur: Record<string, number>
+  rentabilidades: number[]       // one per `fechas` month
+}
+
+export interface DetalleCalculoFrontera {
+  datos: DatosEntradaFrontera
+  estadisticas: EstadisticasActivos
+  cartera_actual: DetalleCarteraActual
+}
+
+export interface FronteraEficiente {
+  fecha_inicio: string
+  fecha_fin: string
+  frecuencia: 'mensual'
+  n_observaciones: number
+  tickers: string[]
+  rentabilidades_esperadas: number[]
+  matriz_covarianzas: number[][]
+  frontera: PuntoCartera[]       // ascending return; first = min variance
+  cartera_minima_varianza: PuntoCartera
+  cartera_actual: PuntoCartera
+  excluidos: ActivoExcluido[]
+  peso_excluido: number          // [0, 1] share of EUR value left out
+  detalle: DetalleCalculoFrontera
+}
+
 // ── Formularios ───────────────────────────────────────────────────────────────
 
 export interface MovimientoCreate {

@@ -1,5 +1,9 @@
+import { AxiosError, AxiosHeaders, type AxiosResponse } from 'axios'
 import { describe, expect, it } from 'vitest'
-import { formatEur, formatCurrency, formatPct, formatPeso, maskAmount, TREEMAP_COLORS, treemapColor } from './utils'
+import {
+  formatEur, formatCurrency, formatPct, formatPeso, maskAmount, TREEMAP_COLORS, treemapColor,
+  getErrorStatus, getFronteraErrorMessage,
+} from './utils'
 
 describe('formatEur — es-ES currency formatting', () => {
   it('formats a positive amount with thousands grouping and comma decimals', () => {
@@ -105,5 +109,47 @@ describe('sign after rounding', () => {
 
   it('formatEur keeps the minus for non-zero rounded values', () => {
     expect(formatEur(-0.01)).toMatch(/^−0,01\s€$/)
+  })
+})
+
+function axiosError(status: number, data: unknown): AxiosError {
+  const response = {
+    status, data, statusText: '', headers: {}, config: { headers: new AxiosHeaders() },
+  } as AxiosResponse
+  return new AxiosError(`Request failed with status code ${status}`, 'ERR_BAD_RESPONSE', undefined, undefined, response)
+}
+
+describe('getErrorStatus', () => {
+  it('returns the HTTP status of an axios error', () => {
+    expect(getErrorStatus(axiosError(503, {}))).toBe(503)
+  })
+
+  it('returns undefined for errors without a response', () => {
+    expect(getErrorStatus(new Error('Network Error'))).toBeUndefined()
+    expect(getErrorStatus(null)).toBeUndefined()
+  })
+})
+
+describe('getFronteraErrorMessage — user-facing frontier error copy', () => {
+  it('shows the backend detail for insufficient-data errors (400)', () => {
+    const detail = 'No hay suficientes datos: se necesitan al menos 2 activos con histórico'
+    expect(getFronteraErrorMessage(axiosError(400, { detail }))).toBe(detail)
+  })
+
+  it('shows a provider-unavailable message for 503, regardless of detail', () => {
+    expect(getFronteraErrorMessage(axiosError(503, { detail: 'yfinance timeout' }))).toBe(
+      'El proveedor de precios no está disponible. Prueba de nuevo en unos minutos.',
+    )
+  })
+
+  it('falls back to a generic message for unknown errors', () => {
+    const generic = 'No se pudo calcular la frontera eficiente.'
+    expect(getFronteraErrorMessage(new Error('Network Error'))).toBe(generic)
+    expect(getFronteraErrorMessage(axiosError(500, 'Internal Server Error'))).toBe(generic)
+  })
+
+  it('ignores non-string details (e.g. 422 validation arrays)', () => {
+    const error = axiosError(422, { detail: [{ loc: ['query', 'anios'], msg: 'too large' }] })
+    expect(getFronteraErrorMessage(error)).toBe('No se pudo calcular la frontera eficiente.')
   })
 })
