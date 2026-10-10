@@ -151,3 +151,7 @@ not linked, and its content is already covered by the dashboard heatmap (`Treema
   `formatEurSigned` not a function, no "Punto elegido"/slider/clickable points, no moves on the page) and
   2 suites failed to import (`lib/rebalanceo`, `MovimientosTable`; 14 tests). GREEN: focused 6 files /
   85 tests; `npm test` 28 files / 247 tests; `npx tsc --noEmit` clean; `npm run build` OK.
+- 2026-10-11 RDD: T4 commit range 7e3d58b..2262cee (11 files, 685 lines, medium) granted by user; reliability
+  review approved and acknowledged (lineage `review-90f2b7672c0ebb66`, authority burned). Non-blocking
+  advisory: R3 SUGGESTION `app/analisis/page.tsx:42-47` a previous selection reappears when react-query
+  serves the same cached response object again (e.g. switching years back).
