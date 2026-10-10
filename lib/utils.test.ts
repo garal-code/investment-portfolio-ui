@@ -1,7 +1,7 @@
 import { AxiosError, AxiosHeaders, type AxiosResponse } from 'axios'
 import { describe, expect, it } from 'vitest'
 import {
-  formatEur, formatCurrency, formatPct, formatPeso, maskAmount, TREEMAP_COLORS, treemapColor,
+  formatEur, formatCurrency, formatPct, formatPeso, formatRatioPct, maskAmount, TREEMAP_COLORS, treemapColor,
   getErrorStatus, getFronteraErrorMessage,
 } from './utils'
 
@@ -54,6 +54,25 @@ describe('formatPeso — 1-decimal weight percentage', () => {
   it('returns an em dash placeholder for null/undefined', () => {
     expect(formatPeso(null)).toBe('—')
     expect(formatPeso(undefined)).toBe('—')
+  })
+})
+
+describe('formatRatioPct — unsigned fraction as a 2-decimal percentage', () => {
+  it('converts a 0-1 fraction into a 2-decimal es-ES percentage without sign', () => {
+    expect(formatRatioPct(0.043625)).toBe('4,36 %')
+  })
+
+  it('accepts a custom number of decimals', () => {
+    expect(formatRatioPct(0.043625, 3)).toBe('4,363 %')
+  })
+
+  it('uses U+2212 for negative fractions', () => {
+    expect(formatRatioPct(-0.012)).toBe('−1,20 %')
+  })
+
+  it('returns an em dash placeholder for null/undefined', () => {
+    expect(formatRatioPct(null)).toBe('—')
+    expect(formatRatioPct(undefined)).toBe('—')
   })
 })
 

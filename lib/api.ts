@@ -2,7 +2,7 @@ import axios from 'axios'
 import type {
   Cartera, CarteraCreate,
   Movimiento, MovimientoCreate,
-  ResumenCartera, AnalisisCartera,
+  ResumenCartera,
   RentabilidadCartera, PeriodoRentabilidad, FronteraEficiente,
   Instrumento, InstrumentoUpdate,
   User, LoginPayload, RegisterPayload, ResetPasswordPayload,
@@ -114,9 +114,6 @@ export const movimientos = {
 export const portfolio = {
   resumen: (carteraId: number) =>
     api.get<ResumenCartera>(`/carteras/${carteraId}/resumen`).then(r => r.data),
-
-  analisis: (carteraId: number) =>
-    api.get<AnalisisCartera>(`/carteras/${carteraId}/analisis`).then(r => r.data),
 
   rentabilidad: (carteraId: number, periodo: PeriodoRentabilidad) =>
     api

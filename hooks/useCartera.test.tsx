@@ -85,7 +85,6 @@ describe('movement/instrument mutations invalidate the frontier', () => {
       }),
     )
 
-    expect(spy).toHaveBeenCalledWith({ queryKey: ['analisis', 3] })
     expect(spy).toHaveBeenCalledWith({ queryKey: ['frontera', 3] })
   })
 

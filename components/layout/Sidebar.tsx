@@ -1,11 +1,12 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, ArrowLeftRight, Settings } from 'lucide-react'
+import { LayoutDashboard, ChartScatter, ArrowLeftRight, Settings } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 
 const NAV = [
   { href: '/dashboard', label: 'Resumen', icon: LayoutDashboard },
+  { href: '/analisis', label: 'Análisis', icon: ChartScatter },
   { href: '/movimientos', label: 'Movimientos', icon: ArrowLeftRight },
   { href: '/ajustes', label: 'Ajustes', icon: Settings },
 ]
