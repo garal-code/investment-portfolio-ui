@@ -8,6 +8,7 @@ import { FronteraChart } from '@/components/charts/FronteraChart'
 import { CifrasClave } from '@/components/analisis/CifrasClave'
 import { ExclusionesNotice } from '@/components/analisis/ExclusionesNotice'
 import { PesosTable } from '@/components/analisis/PesosTable'
+import { DetalleCalculo } from '@/components/analisis/DetalleCalculo'
 import { useFronteraEficiente } from '@/hooks/useCartera'
 import { useActiveCartera } from '@/contexts/CarteraContext'
 import { formatFecha, getFronteraErrorMessage } from '@/lib/utils'
@@ -109,7 +110,7 @@ export default function AnalisisPage() {
               />
             </div>
 
-            {/* The "Detalle del cálculo" section (T3) is appended here. */}
+            <DetalleCalculo frontera={frontera} />
           </>
         )}
       </div>

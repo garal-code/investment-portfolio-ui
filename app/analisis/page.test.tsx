@@ -97,6 +97,15 @@ describe('AnalisisPage — result', () => {
     expect(within(notice).getByText('IPO').parentElement).toHaveTextContent('histórico insuficiente (< 12 meses)')
   })
 
+  it('renders the calculation detail below the result', async () => {
+    renderPage()
+
+    const detalle = await screen.findByRole('region', { name: 'Detalle del cálculo' })
+    const pesos = screen.getByRole('region', { name: 'Pesos por activo' })
+    expect(pesos.compareDocumentPosition(detalle) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(within(detalle).getByText('Matriz de correlaciones')).toBeInTheDocument()
+  })
+
   it('hides the exclusions notice when nothing was excluded', async () => {
     respondWith({ ...fronteraEficienteFixture, excluidos: [], peso_excluido: 0 })
     renderPage()
