@@ -120,3 +120,8 @@ not linked, and its content is already covered by the dashboard heatmap (`Treema
   `-0,23`, `formatMes` not a function, no "Detalle del cálculo" region/summaries in component and
   page tests). GREEN: focused 3 files / 53 tests; `npm test` 26 files / 220 tests;
   `npx tsc --noEmit` clean; `npm run build` OK.
+- 2026-10-10 RDD: committed range develop..4a2141a (26 files, 1989 lines) assessed medium; one-lens
+  reliability review approved and acknowledged (lineage `review-582b4b7380b80215`, authority burned).
+  Non-blocking advisories (follow-ups): R3 WARNING `components/charts/FronteraChart.test.tsx:7-22` chart
+  series rendering not proven by the test; R3 SUGGESTION `lib/utils.test.ts:93-96` `formatMes` depends on
+  ICU month abbreviations ("sept" vs "sep").
