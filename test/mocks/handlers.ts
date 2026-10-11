@@ -1,4 +1,5 @@
 import { http, HttpResponse } from 'msw'
+import { fronteraEficienteFixture } from './fixtures/fronteraEficiente'
 
 // Baseline MSW handlers for the Phase 1 test bootstrap. `lib/api.ts` calls
 // are same-origin relative paths (`/api/v1/...`), matching what the browser
@@ -10,6 +11,9 @@ import { http, HttpResponse } from 'msw'
 // `GET /api/v1/carteras` (Phase 3) defaults to a single cartera so specs
 // that don't care about cartera selection still render normally; tests that
 // do care override it per-test with `server.use(...)`.
+//
+// `GET /api/v1/carteras/:id/frontera-eficiente` defaults to a successful
+// 3-ticker frontier; error states (400/503/404) are per-test overrides.
 export const handlers = [
   http.get('/api/v1/auth/me', () => {
     return HttpResponse.json({
@@ -24,5 +28,9 @@ export const handlers = [
     return HttpResponse.json([
       { id: 1, nombre: 'Cartera principal', created_at: '2024-01-01T00:00:00Z' },
     ])
+  }),
+
+  http.get('/api/v1/carteras/:id/frontera-eficiente', () => {
+    return HttpResponse.json(fronteraEficienteFixture)
   }),
 ]

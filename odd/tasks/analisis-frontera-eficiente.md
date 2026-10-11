@@ -1,0 +1,89 @@
+# Analysis Page: Markowitz Efficient Frontier
+
+File locator: `odd/tasks/analisis-frontera-eficiente.md`
+Engram mirror: `odd/analisis-frontera-eficiente/tasks`
+Branch: `feat/analisis-frontera-eficiente` (from `develop` 8c72e7e)
+
+## Objective
+
+Turn `/analisis` into the efficient-frontier page of the active cartera and add it to the sidebar
+as "Análisis". Show the result (risk/return chart, weights, exclusions) and the calculation detail
+(the same steps as the reference spreadsheet "Markowitz - Cartera Eficiente.xlsx").
+
+## Problem / Why
+
+The backend (`garal-screener`, PRs #24-#27, merged) exposes
+`GET /api/v1/carteras/{id}/frontera-eficiente?anios=5&puntos=20`, but nothing in the UI consumes it.
+The current `/analisis` page (donuts + bar chart of composition) is orphaned: not in the sidebar,
+not linked, and its content is already covered by the dashboard heatmap (`Treemap`).
+
+## Decisions (user, 2026-10-10)
+
+- Page: `/analisis`, sidebar entry "Análisis".
+- Replace the old content: remove the donuts page and, if unused elsewhere, `DonutChart`, `BarrasPeso`,
+  `useAnalisis` and `portfolio.analisis` (the backend `/analisis` endpoint stays untouched).
+- Scope v1: result + full calculation detail.
+
+## Backend contract (garal-screener develop c6fd927, `app/schemas.py` `FronteraEficienteCartera`)
+
+- Root: `fecha_inicio`, `fecha_fin` (last day of the last completed month), `frecuencia: "mensual"`,
+  `n_observaciones`, `tickers`, `rentabilidades_esperadas[tickers]`, `matriz_covarianzas[tickers][tickers]`,
+  `frontera: Punto[]` (ascending return; first = min variance), `cartera_minima_varianza: Punto`,
+  `cartera_actual: Punto`, `excluidos: {ticker, motivo}[]`
+  (`sin_ticker | sin_precio_actual | sin_historico | historico_insuficiente`), `peso_excluido` in [0, 1].
+- `Punto`: `rentabilidad`, `volatilidad`, `varianza` (monthly, not annualised), `pesos: {ticker: weight}`.
+- `detalle.datos`: `fechas_precios`, `precios[fechas_precios][tickers]` (native currency),
+  `fechas`, `rentabilidades[fechas][tickers]`.
+- `detalle.estadisticas`: `varianzas`, `volatilidades`, `matriz_correlaciones`.
+- `detalle.cartera_actual`: `valores_eur: {ticker: eur}`, `rentabilidades[fechas]`.
+- Query params: `anios` 1..20 (default 5), `puntos` 2..100 (default 20).
+- Errors: 400 insufficient data (Spanish `detail`, show it), 503 price provider down, 404 foreign cartera.
+
+## Constraints
+
+- Follow existing patterns: `lib/api.ts` client, `types/index.ts`, hooks in `hooks/useCartera.ts`
+  (react-query keyed by cartera), charts in `components/charts/` with recharts, MSW in `test/mocks/`.
+- Movement mutations already invalidate `['analisis', ...]`; the frontier query must be invalidated
+  the same way so the page refreshes after a new movement.
+- All figures are monthly; label them as such. No annualisation in v1.
+- Code, identifiers, comments in English; UI copy in Spanish (existing convention).
+
+## Tasks
+
+- [x] T1 — Data layer: frontier types, `portfolio.fronteraEficiente(carteraId, anios)`, `useFronteraEficiente`
+  hook (query key `['frontera', carteraId, anios]`, invalidated by movement mutations), MSW handler and
+  fixture, tests; error detail extraction for 400/503.
+- [ ] T2 — Result view: replace `/analisis` page content, sidebar entry "Análisis", years selector
+  (`SegmentedControl`), risk/return chart (frontier line, min-variance point, current portfolio point,
+  tooltip with weights), weights table (current vs min variance), exclusions notice with `peso_excluido`,
+  loading/empty/400/503 states; remove old donuts page and unused `DonutChart`/`BarrasPeso`/`useAnalisis`.
+- [ ] T3 — Calculation detail section: monthly prices and returns tables, per-asset stats
+  (expected return, variance, volatility), correlation matrix (colour-scaled), covariance matrix,
+  current portfolio EUR values and monthly return series; collapsible to keep the page readable.
+
+## Checks
+
+- Focused: `npx vitest run <touched test files>`.
+- Task closure: `npm test`, `npx tsc --noEmit`, `npm run build` when routes change.
+- Test-first: RED before GREEN where a deterministic test applies (hooks, components, page states).
+
+## Delivery
+
+- Forecast: T1 ~200, T2 ~350, T3 ~300 changed lines (incl. tests) -> over the ~400 budget;
+  delivery strategy to be confirmed with the user before opening PRs (ask-on-risk).
+
+## Progress / Evidence
+
+- 2026-10-10: feature document created; branch created from develop 8c72e7e.
+- 2026-10-10: T1 done (commit: see git log). Added frontier types in `types/index.ts`
+  (`PuntoCartera`, `MotivoExclusion`, `ActivoExcluido`, `DatosEntradaFrontera`, `EstadisticasActivos`,
+  `DetalleCarteraActual`, `DetalleCalculoFrontera`, `FronteraEficiente`),
+  `portfolio.fronteraEficiente(carteraId, anios)`, `useFronteraEficiente(carteraId, anios)` (key
+  `['frontera', carteraId, anios]`; no retry on 400/404/503, otherwise the app default single retry),
+  `['frontera', id]` / `['frontera']` invalidation next to every `analisis` invalidation,
+  `getErrorStatus` + `getFronteraErrorMessage` in `lib/utils.ts`, MSW default handler and fixture
+  `test/mocks/fixtures/fronteraEficiente.ts` (3 tickers, 13 months, stats computed from prices).
+  RED: 17 new tests failed (`portfolio.fronteraEficiente` / `useFronteraEficiente` /
+  `getErrorStatus` / `getFronteraErrorMessage` not a function; `invalidateQueries` not called with
+  `['frontera', …]`). GREEN: focused 3 files / 41 tests; `npm test` 22 files / 185 tests;
+  `npx tsc --noEmit` clean.

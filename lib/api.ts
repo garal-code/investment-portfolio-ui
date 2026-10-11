@@ -3,7 +3,7 @@ import type {
   Cartera, CarteraCreate,
   Movimiento, MovimientoCreate,
   ResumenCartera, AnalisisCartera,
-  RentabilidadCartera, PeriodoRentabilidad,
+  RentabilidadCartera, PeriodoRentabilidad, FronteraEficiente,
   Instrumento, InstrumentoUpdate,
   User, LoginPayload, RegisterPayload, ResetPasswordPayload,
 } from '@/types'
@@ -121,6 +121,11 @@ export const portfolio = {
   rentabilidad: (carteraId: number, periodo: PeriodoRentabilidad) =>
     api
       .get<RentabilidadCartera>(`/carteras/${carteraId}/rentabilidad`, { params: { periodo } })
+      .then(r => r.data),
+
+  fronteraEficiente: (carteraId: number, anios: number) =>
+    api
+      .get<FronteraEficiente>(`/carteras/${carteraId}/frontera-eficiente`, { params: { anios } })
       .then(r => r.data),
 }
 

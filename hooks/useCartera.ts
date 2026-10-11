@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { carteras, movimientos, portfolio, instrumentos } from '@/lib/api'
+import { getErrorStatus } from '@/lib/utils'
 import type { CarteraCreate, MovimientoCreate, InstrumentoUpdate, PeriodoRentabilidad } from '@/types'
 
 // ── Carteras ──────────────────────────────────────────────────────────────────
@@ -47,6 +48,21 @@ export function useAnalisis(carteraId: number | null) {
   })
 }
 
+// 400 (insufficient data), 404 (foreign cartera) and 503 (price provider down)
+// will not change on an immediate retry; anything else keeps the app default
+// of a single retry (`app/providers.tsx`).
+const FRONTERA_NO_RETRY_STATUSES = [400, 404, 503]
+
+export function useFronteraEficiente(carteraId: number | null, anios: number) {
+  return useQuery({
+    queryKey: ['frontera', carteraId, anios],
+    queryFn: () => portfolio.fronteraEficiente(carteraId as number, anios),
+    enabled: carteraId !== null,
+    retry: (failureCount, error) =>
+      !FRONTERA_NO_RETRY_STATUSES.includes(getErrorStatus(error) ?? 0) && failureCount < 1,
+  })
+}
+
 /**
  * `periodo: null` desactiva el fetch (ej. cuando el usuario eligió "Total",
  * que ya se cubre con useResumen). Solo se pide un periodo concreto cuando
@@ -78,6 +94,7 @@ export function useCrearMovimiento() {
       qc.invalidateQueries({ queryKey: ['movimientos', vars.cartera_id] })
       qc.invalidateQueries({ queryKey: ['resumen', vars.cartera_id] })
       qc.invalidateQueries({ queryKey: ['analisis', vars.cartera_id] })
+      qc.invalidateQueries({ queryKey: ['frontera', vars.cartera_id] })
     },
   })
 }
@@ -90,6 +107,7 @@ export function useEliminarMovimiento(carteraId: number | null) {
       qc.invalidateQueries({ queryKey: ['movimientos', carteraId] })
       qc.invalidateQueries({ queryKey: ['resumen', carteraId] })
       qc.invalidateQueries({ queryKey: ['analisis', carteraId] })
+      qc.invalidateQueries({ queryKey: ['frontera', carteraId] })
     },
   })
 }
@@ -113,6 +131,7 @@ export function useActualizarInstrumento() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['resumen'] })
       qc.invalidateQueries({ queryKey: ['analisis'] })
+      qc.invalidateQueries({ queryKey: ['frontera'] })
     },
   })
 }

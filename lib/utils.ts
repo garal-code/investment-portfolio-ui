@@ -150,3 +150,20 @@ export function getErrorMessage(error: unknown, fallback: string): string {
     (error as { response?: { data?: { detail?: string } } }).response?.data?.detail
   return detail || fallback
 }
+
+export function getErrorStatus(error: unknown): number | undefined {
+  if (error == null || typeof error !== 'object' || !('response' in error)) return undefined
+  return (error as { response?: { status?: number } }).response?.status
+}
+
+// 400 carries a Spanish `detail` (insufficient data) worth showing as is; 503
+// means the price provider is down, whatever its detail says. Non-string
+// details (e.g. 422 validation arrays) fall back to the generic message.
+export function getFronteraErrorMessage(error: unknown): string {
+  if (getErrorStatus(error) === 503) {
+    return 'El proveedor de precios no está disponible. Prueba de nuevo en unos minutos.'
+  }
+  const detail = (error as { response?: { data?: { detail?: unknown } } } | null)?.response?.data?.detail
+  if (typeof detail === 'string' && detail) return detail
+  return 'No se pudo calcular la frontera eficiente.'
+}
