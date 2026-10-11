@@ -170,3 +170,6 @@ not linked, and its content is already covered by the dashboard heatmap (`Treema
   no-cartera state. RED: `Metodologia.test.tsx` failed to import (2 tests) and 3 page tests failed (no
   "¿Cómo se calcula?" region/button with data and on 400). GREEN: focused 2 files / 21 tests; `npm test`
   29 files / 253 tests; `npx tsc --noEmit` clean; `npm run build` OK.
+- 2026-10-11 RDD: T5 commit range 31506d8..8d2ba0a (5 files, 263 lines, medium); reliability review approved
+  and acknowledged (lineage `review-8f411320a1d95005`, authority burned). Non-blocking advisory: R3 SUGGESTION
+  `app/analisis/page.test.tsx:201-212` the scroll-into-view of the header trigger is not proven by the test.
