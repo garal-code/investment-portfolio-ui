@@ -61,6 +61,15 @@ not linked, and its content is already covered by the dashboard heatmap (`Treema
   (expected return, variance, volatility), correlation matrix (colour-scaled), covariance matrix,
   current portfolio EUR values and monthly return series; collapsible to keep the page readable.
 
+- [x] T4 — Rebalancing moves (user request 2026-10-11): the user picks any frontier point (click on the chart,
+  plus an accessible keyboard alternative such as a slider over the frontier points) and the page shows the
+  moves to go from the current portfolio to that point: per ticker current weight, target weight, delta (pp),
+  EUR amount = delta x total EUR value of included positions (sum of `detalle.cartera_actual.valores_eur`),
+  action Comprar/Vender/Mantener (tiny deltas -> Mantener). Summary: current vs selected return/volatility.
+  Default selection: frontier point with volatility closest to the current portfolio. EUR masked in privacy
+  mode. Excluded positions are never moved. Out of scope: number of shares (needs current price per share
+  and FX, not in the response). Pure calculation in `lib/` with unit tests.
+
 ## Checks
 
 - Focused: `npx vitest run <touched test files>`.
@@ -125,3 +134,24 @@ not linked, and its content is already covered by the dashboard heatmap (`Treema
   Non-blocking advisories (follow-ups): R3 WARNING `components/charts/FronteraChart.test.tsx:7-22` chart
   series rendering not proven by the test; R3 SUGGESTION `lib/utils.test.ts:93-96` `formatMes` depends on
   ICU month abbreviations ("sept" vs "sep").
+- 2026-10-11: T4 done. `lib/rebalanceo.ts`: `computeRebalancingMoves(tickers, pesosActuales, pesosObjetivo,
+  valoresEur)` (one row per ticker in `tickers` order; missing weights = 0; total = EUR value of the
+  analysed tickers only, so excluded positions never move and amounts net to ~0; `HOLD_THRESHOLD` 0.005
+  -> "mantener") and `defaultFrontierIndex(frontera, actual)` (closest volatility, ties -> higher return,
+  `null` when empty). `lib/utils.ts`: `formatPp` (signed pp, 1 decimal) and `formatEurSigned`.
+  `FronteraChart`: optional `selectedIndex`/`onSelect`; frontier points clickable (pointer cursor), chosen
+  point drawn as a dark star on top and listed in the legend as "Punto elegido"; "Riesgo objetivo" range
+  slider below the chart (`aria-valuetext` + `<output>` with monthly volatility/return). Page keeps the
+  selection tied to the response it was made on, so a new response (horizon change, refetch after a
+  movement) falls back to the default point. New `components/analisis/MovimientosTable.tsx` right after
+  the chart: current vs chosen summary, Activo / Peso actual / Peso objetivo / Diferencia (pp) / Importe
+  (signed EUR, privacy-masked) / Acción badge (movement-list buy/sell colours), footer note (excluded
+  positions not moved, estimates not a recommendation, no number of shares). Chart clicks are tested in
+  jsdom by mocking `ResponsiveContainer` to a fixed size. RED: 11 tests failed (`formatPp`/
+  `formatEurSigned` not a function, no "Punto elegido"/slider/clickable points, no moves on the page) and
+  2 suites failed to import (`lib/rebalanceo`, `MovimientosTable`; 14 tests). GREEN: focused 6 files /
+  85 tests; `npm test` 28 files / 247 tests; `npx tsc --noEmit` clean; `npm run build` OK.
+- 2026-10-11 RDD: T4 commit range 7e3d58b..2262cee (11 files, 685 lines, medium) granted by user; reliability
+  review approved and acknowledged (lineage `review-90f2b7672c0ebb66`, authority burned). Non-blocking
+  advisory: R3 SUGGESTION `app/analisis/page.tsx:42-47` a previous selection reappears when react-query
+  serves the same cached response object again (e.g. switching years back).
