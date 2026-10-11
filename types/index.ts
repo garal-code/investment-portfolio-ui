@@ -91,19 +91,6 @@ export interface ResumenCartera {
   posiciones: Posicion[]
 }
 
-export interface GrupoAnalisis {
-  nombre: string
-  valor: number
-  peso_pct: number
-}
-
-export interface AnalisisCartera {
-  por_sector: GrupoAnalisis[]
-  por_pais: GrupoAnalisis[]
-  por_tipo: GrupoAnalisis[]
-  por_moneda: GrupoAnalisis[]
-}
-
 export type PeriodoRentabilidad = '1m' | '2m' | '3m' | '6m' | '1y' | '2y' | '3y' | 'ytd'
 
 export interface PosicionRentabilidad {

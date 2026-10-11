@@ -31,7 +31,7 @@ export function Topbar({ title, subtitle }: TopbarProps) {
     setRefreshing(true)
     if (carteraId != null) {
       await qc.invalidateQueries({ queryKey: ['resumen', carteraId] })
-      await qc.invalidateQueries({ queryKey: ['analisis', carteraId] })
+      await qc.invalidateQueries({ queryKey: ['frontera', carteraId] })
     }
     setMinutos(0)
     setTimeout(() => setRefreshing(false), 800)

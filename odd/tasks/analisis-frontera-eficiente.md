@@ -53,7 +53,7 @@ not linked, and its content is already covered by the dashboard heatmap (`Treema
 - [x] T1 — Data layer: frontier types, `portfolio.fronteraEficiente(carteraId, anios)`, `useFronteraEficiente`
   hook (query key `['frontera', carteraId, anios]`, invalidated by movement mutations), MSW handler and
   fixture, tests; error detail extraction for 400/503.
-- [ ] T2 — Result view: replace `/analisis` page content, sidebar entry "Análisis", years selector
+- [x] T2 — Result view: replace `/analisis` page content, sidebar entry "Análisis", years selector
   (`SegmentedControl`), risk/return chart (frontier line, min-variance point, current portfolio point,
   tooltip with weights), weights table (current vs min variance), exclusions notice with `peso_excluido`,
   loading/empty/400/503 states; remove old donuts page and unused `DonutChart`/`BarrasPeso`/`useAnalisis`.
@@ -87,3 +87,21 @@ not linked, and its content is already covered by the dashboard heatmap (`Treema
   `getErrorStatus` / `getFronteraErrorMessage` not a function; `invalidateQueries` not called with
   `['frontera', …]`). GREEN: focused 3 files / 41 tests; `npm test` 22 files / 185 tests;
   `npx tsc --noEmit` clean.
+- 2026-10-10: T2 done. `/analisis` now shows the frontier of the active cartera: header card with
+  window (`fecha_inicio` – `fecha_fin`), `n_observaciones` monthly observations, "monthly, not
+  annualised" note and a 3/5/10-year `SegmentedControl` (default 5, kept visible on loading/error);
+  exclusions notice (`components/analisis/ExclusionesNotice.tsx`, Spanish label per `motivo` +
+  `peso_excluido`); risk/return chart (`components/charts/FronteraChart.tsx`, recharts `ScatterChart`:
+  frontier joint line, min-variance diamond, current-portfolio marker, HTML legend, tooltip with
+  return/volatility/weights); key figures (`CifrasClave`) and weights table (`PesosTable`, current vs
+  min-variance + EUR value, privacy-mode aware, horizontal scroll). 400/503 via
+  `getFronteraErrorMessage`. Sidebar entry "Análisis" (`ChartScatter`) between Resumen and
+  Movimientos. New `formatRatioPct` helper (2-decimal unsigned %). Removed `DonutChart.tsx`,
+  `BarrasPeso.tsx`, `useAnalisis`, `portfolio.analisis`, `AnalisisCartera`/`GrupoAnalisis`, the
+  `['analisis']` invalidations in `useCartera.ts` and the now-unused `CHART_COLORS`; AuthContext
+  query-key comment updated. `components/layout/Topbar.tsx` still invalidates `['analisis', id]` on
+  refresh (outside the T2 edit surface; harmless no-op). RED: 14 tests failed + chart test file failed
+  to import (`formatRatioPct` not a function, no "Análisis" link, old page requested the unhandled
+  `/analisis` endpoint, `./FronteraChart` missing). GREEN: focused 5 files / 55 tests; `npm test`
+  25 files / 205 tests; `npx tsc --noEmit` clean; `npm run build` OK (`/analisis` static).
+- 2026-10-10 T2 parent follow-up: `components/layout/Topbar.tsx` refresh button invalidated the removed `['analisis', id]` key; now invalidates `['frontera', id]`. `npx tsc --noEmit` clean, `npx vitest run` 205 passed.

@@ -39,15 +39,6 @@ export function useResumen(carteraId: number | null) {
   })
 }
 
-export function useAnalisis(carteraId: number | null) {
-  return useQuery({
-    queryKey: ['analisis', carteraId],
-    queryFn: () => portfolio.analisis(carteraId as number),
-    enabled: carteraId !== null,
-    refetchInterval: 5 * 60 * 1000,
-  })
-}
-
 // 400 (insufficient data), 404 (foreign cartera) and 503 (price provider down)
 // will not change on an immediate retry; anything else keeps the app default
 // of a single retry (`app/providers.tsx`).
@@ -93,7 +84,6 @@ export function useCrearMovimiento() {
     onSuccess: (_, vars) => {
       qc.invalidateQueries({ queryKey: ['movimientos', vars.cartera_id] })
       qc.invalidateQueries({ queryKey: ['resumen', vars.cartera_id] })
-      qc.invalidateQueries({ queryKey: ['analisis', vars.cartera_id] })
       qc.invalidateQueries({ queryKey: ['frontera', vars.cartera_id] })
     },
   })
@@ -106,7 +96,6 @@ export function useEliminarMovimiento(carteraId: number | null) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['movimientos', carteraId] })
       qc.invalidateQueries({ queryKey: ['resumen', carteraId] })
-      qc.invalidateQueries({ queryKey: ['analisis', carteraId] })
       qc.invalidateQueries({ queryKey: ['frontera', carteraId] })
     },
   })
@@ -130,7 +119,6 @@ export function useActualizarInstrumento() {
       instrumentos.actualizar(id, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['resumen'] })
-      qc.invalidateQueries({ queryKey: ['analisis'] })
       qc.invalidateQueries({ queryKey: ['frontera'] })
     },
   })

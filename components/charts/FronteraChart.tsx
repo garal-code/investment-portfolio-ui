@@ -1,0 +1,183 @@
+'use client'
+import {
+  CartesianGrid, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis, ZAxis,
+} from 'recharts'
+import { formatNum, formatPct, formatPeso, formatRatioPct } from '@/lib/utils'
+import type { PuntoCartera } from '@/types'
+
+export type SerieFrontera = 'frontera' | 'minima' | 'actual'
+
+export interface FronteraChartPoint {
+  volatilidad: number   // monthly, in %
+  rentabilidad: number  // monthly, in %
+  serie: SerieFrontera
+  punto: PuntoCartera
+}
+
+const SERIES: Record<SerieFrontera, { label: string; tooltip: string; color: string }> = {
+  frontera: { label: 'Frontera eficiente', tooltip: 'Cartera de la frontera', color: '#2D6A5A' },
+  minima: { label: 'Mínima varianza', tooltip: 'Mínima varianza', color: '#c4956a' },
+  actual: { label: 'Cartera actual', tooltip: 'Cartera actual', color: '#8a3a6a' },
+}
+
+export function toChartPoint(punto: PuntoCartera, serie: SerieFrontera): FronteraChartPoint {
+  return {
+    volatilidad: punto.volatilidad * 100,
+    rentabilidad: punto.rentabilidad * 100,
+    serie,
+    punto,
+  }
+}
+
+interface FronteraTooltipProps {
+  active?: boolean
+  payload?: ReadonlyArray<{ payload?: FronteraChartPoint }>
+  tickers: string[]
+}
+
+export function FronteraTooltip({ active, payload, tickers }: FronteraTooltipProps) {
+  const point = payload?.[0]?.payload
+  if (!active || !point) return null
+  const { punto, serie } = point
+
+  return (
+    <div
+      style={{
+        background: '#fff',
+        border: '1px solid #ece7e1',
+        borderRadius: 8,
+        boxShadow: '0 2px 8px rgba(0,0,0,.06)',
+        padding: '10px 12px',
+        fontSize: 12,
+        minWidth: 170,
+      }}
+    >
+      <p style={{ fontWeight: 700, color: SERIES[serie].color, marginBottom: 6 }}>{SERIES[serie].tooltip}</p>
+      <dl style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '2px 12px', color: '#221e1a' }}>
+        <dt style={{ color: '#a09080' }}>Rentabilidad</dt>
+        <dd style={{ textAlign: 'right', fontWeight: 500 }}>{formatPct(punto.rentabilidad * 100)}</dd>
+        <dt style={{ color: '#a09080' }}>Volatilidad</dt>
+        <dd style={{ textAlign: 'right', fontWeight: 500 }}>{formatRatioPct(punto.volatilidad)}</dd>
+      </dl>
+      <dl
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr auto',
+          gap: '2px 12px',
+          marginTop: 6,
+          paddingTop: 6,
+          borderTop: '1px solid #f5f0eb',
+          color: '#6a5a4a',
+        }}
+      >
+        {tickers.map(ticker => (
+          <div key={ticker} style={{ display: 'contents' }}>
+            <dt>{ticker}</dt>
+            <dd style={{ textAlign: 'right' }}>{formatPeso(punto.pesos[ticker] ?? 0)}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  )
+}
+
+const axisTick = { fill: '#a09080', fontSize: 11 }
+const axisLabel = { fill: '#a09080', fontSize: 11 }
+const formatAxisPct = (value: number) => `${formatNum(value, 1)} %`
+
+interface FronteraChartProps {
+  frontera: PuntoCartera[]
+  minimaVarianza: PuntoCartera
+  actual: PuntoCartera
+  tickers: string[]
+}
+
+// Risk/return plane: X = monthly volatility, Y = expected monthly return,
+// both in %. The frontier is drawn as a joint line through its points, with
+// the min-variance and current portfolios as distinct markers on top.
+export function FronteraChart({ frontera, minimaVarianza, actual, tickers }: FronteraChartProps) {
+  const fronteraData = frontera.map(p => toChartPoint(p, 'frontera'))
+  const minimaData = [toChartPoint(minimaVarianza, 'minima')]
+  const actualData = [toChartPoint(actual, 'actual')]
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="h-[260px] md:h-[340px]" role="img" aria-label="Gráfico de riesgo y rentabilidad mensual">
+        <ResponsiveContainer width="100%" height="100%">
+          <ScatterChart margin={{ top: 8, right: 16, bottom: 24, left: 8 }}>
+            <CartesianGrid stroke="#f5f0eb" />
+            <XAxis
+              type="number"
+              dataKey="volatilidad"
+              name="Volatilidad"
+              domain={['auto', 'auto']}
+              tickFormatter={formatAxisPct}
+              tick={axisTick}
+              stroke="#ece7e1"
+              label={{ value: 'Volatilidad mensual (%)', position: 'insideBottom', offset: -16, ...axisLabel }}
+            />
+            <YAxis
+              type="number"
+              dataKey="rentabilidad"
+              name="Rentabilidad"
+              domain={['auto', 'auto']}
+              tickFormatter={formatAxisPct}
+              tick={axisTick}
+              stroke="#ece7e1"
+              width={64}
+              label={{ value: 'Rentabilidad mensual (%)', angle: -90, position: 'insideLeft', dy: 70, ...axisLabel }}
+            />
+            <ZAxis range={[36, 36]} />
+            <ZAxis zAxisId="marker" range={[150, 150]} />
+            <Tooltip
+              cursor={{ strokeDasharray: '3 3', stroke: '#a09080' }}
+              content={props => <FronteraTooltip active={props.active} payload={props.payload} tickers={tickers} />}
+            />
+            <Scatter
+              name={SERIES.frontera.label}
+              data={fronteraData}
+              fill={SERIES.frontera.color}
+              line={{ stroke: SERIES.frontera.color, strokeWidth: 2 }}
+              lineType="joint"
+              isAnimationActive={false}
+            />
+            <Scatter
+              name={SERIES.minima.label}
+              data={minimaData}
+              zAxisId="marker"
+              fill={SERIES.minima.color}
+              shape="diamond"
+              isAnimationActive={false}
+            />
+            <Scatter
+              name={SERIES.actual.label}
+              data={actualData}
+              zAxisId="marker"
+              fill={SERIES.actual.color}
+              shape="circle"
+              isAnimationActive={false}
+            />
+          </ScatterChart>
+        </ResponsiveContainer>
+      </div>
+
+      <ul aria-label="Leyenda" className="flex flex-wrap gap-x-5 gap-y-1.5 text-[12px]" style={{ color: '#6a5a4a' }}>
+        {(Object.keys(SERIES) as SerieFrontera[]).map(serie => (
+          <li key={serie} className="flex items-center gap-2">
+            <span
+              aria-hidden="true"
+              style={{
+                width: serie === 'frontera' ? 16 : 9,
+                height: serie === 'frontera' ? 2 : 9,
+                background: SERIES[serie].color,
+                borderRadius: serie === 'actual' ? '50%' : 1,
+                transform: serie === 'minima' ? 'rotate(45deg)' : undefined,
+              }}
+            />
+            {SERIES[serie].label}
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}

@@ -59,6 +59,17 @@ export function formatPeso(value?: number | null): string {
   return `${pct} %`
 }
 
+// Unsigned 0-1 fraction (e.g. a monthly volatility) as an es-ES percentage;
+// 2 decimals by default because monthly risk figures differ by hundredths.
+export function formatRatioPct(value?: number | null, decimals = 2): string {
+  if (value == null) return '—'
+  const pct = new Intl.NumberFormat('es-ES', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(value * 100)
+  return `${withUnicodeMinus(pct)} %`
+}
+
 // Privacy mode placeholder: never derived from the real amount (always
 // formats 0), so it cannot leak magnitude or sign. Extracts just the
 // currency symbol/suffix by stripping digits/separators from the 0-amount
@@ -90,21 +101,6 @@ export function signRent(value?: number | null): string {
   if (value == null || value === 0) return ''
   return value > 0 ? '+' : ''
 }
-
-// ── Colores para gráficos (orden Garal) ───────────────────────────────────────
-
-export const CHART_COLORS = [
-  '#2D6A5A', // primary green
-  '#c4956a', // amber
-  '#8a3a6a', // plum
-  '#4a7a5a', // moss
-  '#6a5a4a', // umber
-  '#a09080', // taupe
-  '#5aaa8a', // green light
-  '#e8c890', // amber light
-  '#c47aab', // plum light
-  '#7a6a5a', // umber mid
-]
 
 // ── Paleta del treemap de composición (orden por peso descendente) ───────────
 // bg/text pairs per the design handoff README — 9 entries, wraps around from

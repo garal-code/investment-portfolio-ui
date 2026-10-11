@@ -80,8 +80,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // happened to fire.
     queryClient.setQueryData(ME_KEY, null)
     // Reset every OTHER cached query — not just `['auth','me']`.
-    // `['carteras']` (CarteraContext) and `['resumen'|'analisis'|
-    // 'movimientos', carteraId]` (useCartera.ts) are user-scoped and must
+    // `['carteras']` (CarteraContext) and `['resumen'|'frontera'|
+    // 'movimientos', carteraId, ...]` (useCartera.ts) are user-scoped and must
     // not survive into the next session. `resetQueries()` (not `clear()`)
     // is required here: `clear()` only removes cache *entries*, it does not
     // notify already-mounted observers (same gap as above) — CarteraContext
