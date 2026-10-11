@@ -57,7 +57,7 @@ not linked, and its content is already covered by the dashboard heatmap (`Treema
   (`SegmentedControl`), risk/return chart (frontier line, min-variance point, current portfolio point,
   tooltip with weights), weights table (current vs min variance), exclusions notice with `peso_excluido`,
   loading/empty/400/503 states; remove old donuts page and unused `DonutChart`/`BarrasPeso`/`useAnalisis`.
-- [ ] T3 — Calculation detail section: monthly prices and returns tables, per-asset stats
+- [x] T3 — Calculation detail section: monthly prices and returns tables, per-asset stats
   (expected return, variance, volatility), correlation matrix (colour-scaled), covariance matrix,
   current portfolio EUR values and monthly return series; collapsible to keep the page readable.
 
@@ -105,3 +105,23 @@ not linked, and its content is already covered by the dashboard heatmap (`Treema
   `/analisis` endpoint, `./FronteraChart` missing). GREEN: focused 5 files / 55 tests; `npm test`
   25 files / 205 tests; `npx tsc --noEmit` clean; `npm run build` OK (`/analisis` static).
 - 2026-10-10 T2 parent follow-up: `components/layout/Topbar.tsx` refresh button invalidated the removed `['analisis', id]` key; now invalidates `['frontera', id]`. `npx tsc --noEmit` clean, `npx vitest run` 205 passed.
+- 2026-10-10: T3 done. "Detalle del cálculo" section (`components/analisis/DetalleCalculo.tsx`) below the
+  weights table: six native `<details>` steps, collapsed by default, each with a one-line Spanish
+  explanation in its `<summary>`; a step body mounts on first open (`toggle` event) so long series
+  are not rendered until asked for. Steps: monthly prices (`fechas_precios` x tickers, native
+  currency, 2 decimals), monthly returns (tickers + "Cartera actual", %, negatives with `rent-neg`),
+  per-asset stats (expected return %, raw variance 6 decimals, volatility %), correlation matrix
+  (2 decimals, diverging plum/green background from the palette, alpha capped for readable ink),
+  covariance matrix (6 decimals, fixed notation), current value per position (EUR, privacy-masked
+  like `PesosTable`, weight, total row). Shared `components/analisis/DetalleTable.tsx` (labelled
+  rows, sticky header row and first column, both-axis scroll capped at 420px, `tabular-nums`).
+  `lib/utils.ts`: new `formatMes` ("ene 2024"); `formatNum` now uses U+2212 for negatives (only
+  other caller is the frontier chart axis). RED: 13 tests failed (`formatNum` returned ASCII
+  `-0,23`, `formatMes` not a function, no "Detalle del cálculo" region/summaries in component and
+  page tests). GREEN: focused 3 files / 53 tests; `npm test` 26 files / 220 tests;
+  `npx tsc --noEmit` clean; `npm run build` OK.
+- 2026-10-10 RDD: committed range develop..4a2141a (26 files, 1989 lines) assessed medium; one-lens
+  reliability review approved and acknowledged (lineage `review-582b4b7380b80215`, authority burned).
+  Non-blocking advisories (follow-ups): R3 WARNING `components/charts/FronteraChart.test.tsx:7-22` chart
+  series rendering not proven by the test; R3 SUGGESTION `lib/utils.test.ts:93-96` `formatMes` depends on
+  ICU month abbreviations ("sept" vs "sep").

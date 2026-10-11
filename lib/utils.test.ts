@@ -1,7 +1,8 @@
 import { AxiosError, AxiosHeaders, type AxiosResponse } from 'axios'
 import { describe, expect, it } from 'vitest'
 import {
-  formatEur, formatCurrency, formatPct, formatPeso, formatRatioPct, maskAmount, TREEMAP_COLORS, treemapColor,
+  formatEur, formatCurrency, formatPct, formatPeso, formatRatioPct, formatNum, formatMes, maskAmount,
+  TREEMAP_COLORS, treemapColor,
   getErrorStatus, getFronteraErrorMessage,
 } from './utils'
 
@@ -73,6 +74,25 @@ describe('formatRatioPct — unsigned fraction as a 2-decimal percentage', () =>
   it('returns an em dash placeholder for null/undefined', () => {
     expect(formatRatioPct(null)).toBe('—')
     expect(formatRatioPct(undefined)).toBe('—')
+  })
+})
+
+describe('formatNum — plain es-ES number', () => {
+  it('formats with the requested fixed decimals, never scientific notation', () => {
+    expect(formatNum(0.00084885, 6)).toBe('0,000849')
+    expect(formatNum(1, 2)).toBe('1,00')
+  })
+
+  it('uses U+2212 for negatives and drops the sign when rounding to zero', () => {
+    expect(formatNum(-0.2287, 2)).toBe('−0,23')
+    expect(formatNum(-0.001, 2)).toBe('0,00')
+  })
+})
+
+describe('formatMes — short month and year', () => {
+  it('renders a YYYY-MM-DD date as an es-ES month label', () => {
+    expect(formatMes('2024-01-01')).toBe('ene 2024')
+    expect(formatMes('2026-12-31')).toBe('dic 2026')
   })
 })
 

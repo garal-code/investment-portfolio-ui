@@ -82,10 +82,12 @@ export function maskAmount(currency = 'EUR'): string {
 
 export function formatNum(value?: number | null, decimals = 2): string {
   if (value == null) return '—'
-  return new Intl.NumberFormat('es-ES', {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
-  }).format(value)
+  return withUnicodeMinus(
+    new Intl.NumberFormat('es-ES', {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    }).format(value),
+  )
 }
 
 // ── Colores semánticos (paleta Garal) ─────────────────────────────────────────
@@ -130,6 +132,13 @@ export function formatFecha(fecha: string): string {
   return new Date(y, m - 1, d).toLocaleDateString('es-ES', {
     day: '2-digit', month: 'short', year: 'numeric',
   })
+}
+
+// Month label for monthly series, e.g. "ene 2024". Same manual parsing as
+// formatFecha so a first-of-month date never shifts to the previous month.
+export function formatMes(fecha: string): string {
+  const [y, m, d] = fecha.split('-').map(Number)
+  return new Date(y, m - 1, d).toLocaleDateString('es-ES', { month: 'short', year: 'numeric' })
 }
 
 export function hoy(): string {
