@@ -42,3 +42,24 @@ describe('MarkdownDocument', () => {
     expect(screen.getByRole('table').parentElement).toHaveStyle({ overflowX: 'auto' })
   })
 })
+
+// The source is a repo-owned document, but the renderer must stay safe if
+// that ever changes: no raw HTML, no javascript: links, KaTeX untrusted.
+describe('MarkdownDocument — untrusted content', () => {
+  it('renders raw HTML as text, never as elements', () => {
+    const { container } = render(<MarkdownDocument source={'<img src=x onerror=alert(1)>'} />)
+    expect(container.querySelector('img')).toBeNull()
+  })
+
+  it('strips javascript: URLs from links', () => {
+    const { container } = render(<MarkdownDocument source={'[x](javascript:alert(1))'} />)
+    for (const a of container.querySelectorAll('a')) {
+      expect(a.getAttribute('href') ?? '').not.toMatch(/javascript:/i)
+    }
+  })
+
+  it('does not turn KaTeX \\href into a link', () => {
+    const { container } = render(<MarkdownDocument source={'$\\href{javascript:alert(1)}{a}$'} />)
+    expect(container.querySelector('a')).toBeNull()
+  })
+})
