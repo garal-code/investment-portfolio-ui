@@ -40,9 +40,9 @@ Branch: `feat/analisis-rediseno`, stacked on `fix/sin-tipo-cambio` (34edd00) -> 
 - [x] T1 — S1: remove `CifrasClave` + `PesosTable`; comparison once; moves table gains `Valor`; min-variance
   shortcut selects frontier point 0; header link `Cómo se calcula` -> `/analisis/metodologia` in a new tab; drop
   the in-page `Metodologia` section. Route: worker. Commit: 9a1566a
-- [ ] T2 — S3 (S1 item 4): calculation detail as always-visible charts (prices base 100, monthly returns, stats
+- [x] T2 — S3 (S1 item 4): calculation detail as always-visible charts (prices base 100, monthly returns, stats
   bars, correlation + covariance heatmaps, current value per position) with a "Ver datos" table toggle each.
-  Route: worker. Commit: —
+  Route: worker. Commit: 943c370
 - [x] T3 — S2: analyst methodology `docs/metodologia-markowitz.md` (math, no code/function/parameter names)
   rendered at `/analisis/metodologia` with Markdown + KaTeX. Route: worker. Commit: ef528d9
 - [x] T4 — S4: sidebar collapses to an icon rail, state persisted. Route: worker. Commit: 22a0156
@@ -78,3 +78,11 @@ Branch: `feat/analisis-rediseno`, stacked on `fix/sin-tipo-cambio` (34edd00) -> 
   shortcut -> point 0 (card label switches); "¿Cómo se calcula?" is a new-tab link. RED 10 tests; GREEN 40 focused.
 - L8 (evidence) T3 ef528d9: analyst doc (217 lines, no code refs) + /analisis/metodologia (Markdown + KaTeX).
   RED = missing modules; GREEN 7 tests. Playwright: page renders, KaTeX formulas and tables OK, 0 console warnings.
+- L9 (evidence) T2 943c370: six always-visible visuals + "Ver datos" tables. RED: missing module + 14 UI tests on the
+  accordion UI. GREEN 24 focused; suite 301/301, tsc clean. Parent fixes after Playwright: monthly returns drawn
+  with straight segments (smoothed curves invented values between months); ResponsiveContainer
+  `initialDimension` (also FronteraChart) removes the 10 "width(-1)" warnings -> 0 warnings.
+- L10 (evidence) T5 Playwright: desktop collapsed rail (initials + icons) persists across reload; "Mínima
+  varianza" selects point 0 and relabels the card; methodology link `_blank` + `noopener noreferrer`; 390px
+  mobile: tables/heatmaps scroll horizontally. Note: in dev the Next.js devtools badge overlaps the sidebar
+  footer toggle (dev-only overlay).
