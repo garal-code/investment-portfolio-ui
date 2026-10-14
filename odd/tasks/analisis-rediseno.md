@@ -30,8 +30,12 @@ Branch: `feat/analisis-rediseno`, stacked on `fix/sin-tipo-cambio` (34edd00) -> 
   analista se lo tenemos que traducir a lo que significa en su mundo, es decir, al analista le puede interesar la
   forumala matematica anlago a lo que calcula la funcion de pyhton pero no el nombre de la funcion ni los
   parametros"
-- **S3 — Calculation data shown visually.** User: "y la parte de las rentabilidades, los precios, la matrices que
-  fuesesn visuales directamente" (see S1 item 4).
+- **S3 — Calculation data below the moves (rewritten by L12).** User: "las dos primeras secciones se quedan como
+  estan. 'Riesgos y rentabilidad'  y 'Movimiento para llegar al punto elegido' se quedam
+  justo debajo las dos matrices tal y como estan y ya debajo de las matrices, se divide como la pantala en parte
+  izquierda donde se ve la tabla de precios y parte derecha donde se ven las retabilidades, que por defecto aparecen
+  colapsadas. LAs matrices por defecto aparecen sin colapsar, el resto de cosas lo quitas". Original S3 request
+  (superseded): "y la parte de las rentabilidades, los precios, la matrices que fuesesn visuales directamente".
 - **S4 — Collapsible sidebar.** User: "Ademas como extra el slide bar quiero que sea colapsable"; clarified: "El
   menú lateral (sidebar verde)" ("Se pliega a una columna de iconos y la página gana ancho.").
 
@@ -46,6 +50,9 @@ Branch: `feat/analisis-rediseno`, stacked on `fix/sin-tipo-cambio` (34edd00) -> 
 - [x] T3 — S2: analyst methodology `docs/metodologia-markowitz.md` (math, no code/function/parameter names)
   rendered at `/analisis/metodologia` with Markdown + KaTeX. Route: worker. Commit: ef528d9
 - [x] T4 — S4: sidebar collapses to an icon rail, state persisted. Route: worker. Commit: 22a0156
+- [x] T6 — S3 (L12): matrices (correlations, covariances) right under the moves, expanded by default and
+  collapsible; below them a two-column split, prices table left and returns table right, collapsed by default;
+  remove the price/return charts, per-asset statistics and value-per-position. Route: inline. Commit: 5dfb0a8
 - [x] T5 — Visual check with Playwright + independent verify (new dependencies = risk item 5). Route: parent +
   gentle-ai-verify. Commit: see L11
 
@@ -96,3 +103,14 @@ Branch: `feat/analisis-rediseno`, stacked on `fix/sin-tipo-cambio` (34edd00) -> 
   markdown safety tests (raw HTML, javascript: links, KaTeX \href; passed at once, they pin existing behaviour).
   Suite 306/306, tsc clean. Open advisories (not fixed): covariance heatmap colour does not show sign;
   colorCorrelacion(NaN) unguarded (backend sends 0); doc file relies on static prerender under standalone output.
+- L12 (user, 2026-10-14, verbatim): "Vale tampoco me convence pero creo que tengo la idea mas o menos clara, las dos
+  primeras secciones se quedan como estan. 'Riesgos y rentabilidad'  y 'Movimiento para llegar al punto elegido' se
+  quedam
+  justo debajo las dos matrices tal y como estan y ya debajo de las matrices, se divide como la pantala en parte
+  izquierda donde se ve la tabla de precios y parte derecha donde se ven las retabilidades, que por defecto aparecen
+  colapsadas. LAs matrices por defecto aparecen sin colapsar, el resto de cosas lo quitas"
+- L13 (interpretation, parent): the header card (period, horizon, methodology link) stays as controls; matrices keep
+  their heatmap and "Ver datos" table "tal y como están"; on narrow screens the prices/returns split stacks.
+- L14 (evidence) T6 5dfb0a8: RED 5 new layout/collapse tests (4 matrix tests passed unchanged); GREEN suite 293/293
+  (charts' tests removed with their components), tsc clean. Playwright 1440px: matrices expanded under the moves,
+  prices left / returns right collapsed, both expand with internal scroll; 0 console warnings.
