@@ -70,6 +70,11 @@ not linked, and its content is already covered by the dashboard heatmap (`Treema
   mode. Excluded positions are never moved. Out of scope: number of shares (needs current price per share
   and FX, not in the response). Pure calculation in `lib/` with unit tests.
 
+- [x] T5 — In-app methodology (user request 2026-10-11, before opening the PR): a "¿Cómo se calcula?"
+  section on `/analisis` explaining to the end user, in Spanish, the method the backend follows (data, window,
+  returns, statistics, long-only frontier, current portfolio, rebalancing moves, limitations). Content must
+  match `garal-screener` `app/services/markowitz.py` / `precios.py` on develop.
+
 ## Checks
 
 - Focused: `npx vitest run <touched test files>`.
@@ -155,3 +160,16 @@ not linked, and its content is already covered by the dashboard heatmap (`Treema
   review approved and acknowledged (lineage `review-90f2b7672c0ebb66`, authority burned). Non-blocking
   advisory: R3 SUGGESTION `app/analisis/page.tsx:42-47` a previous selection reappears when react-query
   serves the same cached response object again (e.g. switching years back).
+- 2026-10-11: T5 done. New static `components/analisis/Metodologia.tsx`: a "¿Cómo se calcula?" card at the
+  end of `/analisis` (after "Detalle del cálculo": result -> moves -> numbers -> method as reference appendix;
+  on errors it sits right below the message). One native `<details>` (collapsed, same chevron/summary styling
+  as `DetalleCalculo`) with nine numbered subsections: qué es, qué activos entran, datos, rentabilidades,
+  estadísticas, cartera, frontera eficiente, movimientos, limitaciones (content as verified against
+  garal-screener). Header card gets a "¿Cómo se calcula?" button (`aria-controls`) that opens the `<details>`
+  and scrolls it into view. Rendered whenever there is a cartera (data, loading, 400/503), not in the
+  no-cartera state. RED: `Metodologia.test.tsx` failed to import (2 tests) and 3 page tests failed (no
+  "¿Cómo se calcula?" region/button with data and on 400). GREEN: focused 2 files / 21 tests; `npm test`
+  29 files / 253 tests; `npx tsc --noEmit` clean; `npm run build` OK.
+- 2026-10-11 RDD: T5 commit range 31506d8..8d2ba0a (5 files, 263 lines, medium); reliability review approved
+  and acknowledged (lineage `review-8f411320a1d95005`, authority burned). Non-blocking advisory: R3 SUGGESTION
+  `app/analisis/page.test.tsx:201-212` the scroll-into-view of the header trigger is not proven by the test.

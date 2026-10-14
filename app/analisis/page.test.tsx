@@ -184,6 +184,54 @@ describe('AnalisisPage — rebalancing moves', () => {
   })
 })
 
+describe('AnalisisPage — methodology', () => {
+  const METODOLOGIA = '¿Cómo se calcula?'
+
+  it('renders the methodology after the calculation detail, collapsed', async () => {
+    renderPage()
+
+    const detalle = await screen.findByRole('region', { name: 'Detalle del cálculo' })
+    const metodologia = screen.getByRole('region', { name: METODOLOGIA })
+    expect(detalle.compareDocumentPosition(metodologia) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(within(metodologia).getByText(METODOLOGIA, { selector: 'summary *' }).closest('details')).not.toHaveAttribute(
+      'open',
+    )
+  })
+
+  it('opens the methodology from the header trigger', async () => {
+    renderPage()
+
+    await screen.findByText(/13 observaciones mensuales/)
+    const header = screen.getByRole('region', { name: 'Frontera eficiente' })
+    fireEvent.click(within(header).getByRole('button', { name: METODOLOGIA }))
+
+    const metodologia = screen.getByRole('region', { name: METODOLOGIA })
+    expect(within(metodologia).getByText(METODOLOGIA, { selector: 'summary *' }).closest('details')).toHaveAttribute(
+      'open',
+    )
+  })
+
+  it('keeps the trigger and the methodology on a 400 so the requirements can be read', async () => {
+    const detail = 'No hay suficientes activos con histórico para calcular la frontera.'
+    server.use(http.get(FRONTERA_URL, () => HttpResponse.json({ detail }, { status: 400 })))
+    renderPage()
+
+    await screen.findByText(detail)
+    const header = screen.getByRole('region', { name: 'Frontera eficiente' })
+    expect(within(header).getByRole('button', { name: METODOLOGIA })).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: METODOLOGIA })).toHaveTextContent(/12 meses/)
+  })
+
+  it('does not render the methodology without a cartera', () => {
+    useActiveCarteraMock.mockReturnValue({ carteraId: null, carteras: [], isLoading: false })
+    renderPage()
+
+    expect(screen.getByText(/No tenés carteras todavía/)).toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: METODOLOGIA })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: METODOLOGIA })).not.toBeInTheDocument()
+  })
+})
+
 describe('AnalisisPage — years selector', () => {
   it('defaults to 5 years and refetches with the selected `anios`', async () => {
     const requested: (string | null)[] = []

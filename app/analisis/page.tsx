@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import { CircleHelp } from 'lucide-react'
 import { AppShell } from '@/components/layout/AppShell'
 import { Topbar } from '@/components/layout/Topbar'
 import { Loading, EmptyState } from '@/components/ui/Loading'
@@ -10,6 +11,7 @@ import { ExclusionesNotice } from '@/components/analisis/ExclusionesNotice'
 import { PesosTable } from '@/components/analisis/PesosTable'
 import { DetalleCalculo } from '@/components/analisis/DetalleCalculo'
 import { MovimientosTable } from '@/components/analisis/MovimientosTable'
+import { Metodologia, METODOLOGIA_ID } from '@/components/analisis/Metodologia'
 import { useFronteraEficiente } from '@/hooks/useCartera'
 import { useActiveCartera } from '@/contexts/CarteraContext'
 import { formatFecha, getFronteraErrorMessage } from '@/lib/utils'
@@ -29,6 +31,14 @@ const cardStyle = {
   border: '1px solid var(--color-border)',
   borderRadius: 14,
   padding: 24,
+}
+
+// Opens the collapsed methodology at the end of the page and brings it into view.
+function openMetodologia() {
+  const details = document.getElementById(METODOLOGIA_ID)
+  if (!(details instanceof HTMLDetailsElement)) return
+  details.open = true
+  details.scrollIntoView?.({ behavior: 'smooth', block: 'start' })
 }
 
 export default function AnalisisPage() {
@@ -83,6 +93,16 @@ export default function AnalisisPage() {
                   </p>
                 </>
               )}
+              <button
+                type="button"
+                onClick={openMetodologia}
+                aria-controls={METODOLOGIA_ID}
+                className="mt-1 inline-flex items-center gap-1 self-start underline-offset-2 hover:underline"
+                style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-primary)' }}
+              >
+                <CircleHelp aria-hidden size={14} />
+                ¿Cómo se calcula?
+              </button>
             </div>
             <SegmentedControl
               options={HORIZONTE_OPTIONS}
@@ -142,6 +162,9 @@ export default function AnalisisPage() {
             <DetalleCalculo frontera={frontera} />
           </>
         )}
+
+        {/* Reference text, also shown on errors: a 400 is when the requirements matter most. */}
+        {carteraId !== null && <Metodologia />}
       </div>
     </AppShell>
   )
