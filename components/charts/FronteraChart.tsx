@@ -213,6 +213,15 @@ export function FronteraChart({
           <output htmlFor={sliderId} className="tabular-nums" style={{ fontSize: 12, color: '#6a5a4a' }}>
             {elegidoText}
           </output>
+          {/* frontera[0] is the minimum-variance portfolio */}
+          <button
+            type="button"
+            onClick={() => onSelect?.(0)}
+            className="rounded-md px-2.5 py-1 text-[12px] font-semibold"
+            style={{ border: '1px solid var(--color-border)', color: 'var(--color-primary)', cursor: 'pointer' }}
+          >
+            Mínima varianza
+          </button>
         </div>
       )}
 

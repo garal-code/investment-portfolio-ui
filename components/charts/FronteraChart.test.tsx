@@ -91,6 +91,22 @@ describe('FronteraChart — point selection', () => {
     fireEvent.change(slider, { target: { value: '4' } })
     expect(onSelect).toHaveBeenCalledWith(4)
   })
+
+  it('offers a "Mínima varianza" shortcut that selects the first frontier point', () => {
+    const onSelect = vi.fn()
+    renderChart({ selectedIndex: 3, onSelect })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mínima varianza' }))
+
+    expect(onSelect).toHaveBeenCalledTimes(1)
+    expect(onSelect).toHaveBeenCalledWith(0)
+  })
+
+  it('has no "Mínima varianza" shortcut when the chart is not selectable', () => {
+    renderChart()
+
+    expect(screen.queryByRole('button', { name: 'Mínima varianza' })).not.toBeInTheDocument()
+  })
 })
 
 describe('toChartPoint', () => {

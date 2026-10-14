@@ -1,7 +1,7 @@
 'use client'
 import { usePreferences } from '@/lib/preferences'
 import { computeRebalancingMoves, type AccionRebalanceo } from '@/lib/rebalanceo'
-import { formatEurSigned, formatPct, formatPeso, formatPp, formatRatioPct, maskAmount } from '@/lib/utils'
+import { formatEur, formatEurSigned, formatPct, formatPeso, formatPp, formatRatioPct, maskAmount } from '@/lib/utils'
 import type { PuntoCartera } from '@/types'
 
 interface MovimientosTableProps {
@@ -9,6 +9,8 @@ interface MovimientosTableProps {
   actual: PuntoCartera
   objetivo: PuntoCartera
   valoresEur: Record<string, number>
+  // The target is the frontier's first point: name it by what it is.
+  esMinimaVarianza?: boolean
 }
 
 const thStyle = {
@@ -46,7 +48,7 @@ function Resumen({ label, punto, color }: { label: string; punto: PuntoCartera; 
 
 // Weight and EUR moves from the current portfolio to the chosen frontier
 // point, over the analysed tickers only (see `computeRebalancingMoves`).
-export function MovimientosTable({ tickers, actual, objetivo, valoresEur }: MovimientosTableProps) {
+export function MovimientosTable({ tickers, actual, objetivo, valoresEur, esMinimaVarianza = false }: MovimientosTableProps) {
   const { privacy } = usePreferences()
   const moves = computeRebalancingMoves(tickers, actual.pesos, objetivo.pesos, valoresEur)
 
@@ -66,14 +68,15 @@ export function MovimientosTable({ tickers, actual, objetivo, valoresEur }: Movi
         </div>
         <ul aria-label="Comparación con el punto elegido" className="grid gap-3 sm:grid-cols-2">
           <Resumen label="Cartera actual" punto={actual} color="#8a3a6a" />
-          <Resumen label="Punto elegido" punto={objetivo} color="#221e1a" />
+          <Resumen label={esMinimaVarianza ? 'Mínima varianza' : 'Punto elegido'} punto={objetivo} color="#221e1a" />
         </ul>
       </div>
       <div className="overflow-x-auto">
-        <table aria-labelledby="movimientos-title" className="w-full min-w-[620px]" style={{ borderCollapse: 'collapse' }}>
+        <table aria-labelledby="movimientos-title" className="w-full min-w-[700px]" style={{ borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ borderTop: '1px solid #ece7e1', borderBottom: '1px solid #ece7e1' }}>
               <th scope="col" style={{ ...thStyle, textAlign: 'left', paddingLeft: 24 }}>Activo</th>
+              <th scope="col" style={{ ...thStyle, textAlign: 'right' }}>Valor</th>
               <th scope="col" style={{ ...thStyle, textAlign: 'right' }}>Peso actual</th>
               <th scope="col" style={{ ...thStyle, textAlign: 'right' }}>Peso objetivo</th>
               <th scope="col" style={{ ...thStyle, textAlign: 'right' }}>Diferencia</th>
@@ -88,6 +91,9 @@ export function MovimientosTable({ tickers, actual, objetivo, valoresEur }: Movi
               return (
                 <tr key={move.ticker} style={{ borderBottom: '1px solid #f5f0eb' }}>
                   <th scope="row" style={{ ...tdStyle, textAlign: 'left', fontWeight: 500, paddingLeft: 24 }}>{move.ticker}</th>
+                  <td style={{ ...tdStyle, textAlign: 'right', color: '#6a5a4a' }}>
+                    {privacy ? maskAmount('EUR') : formatEur(valoresEur[move.ticker])}
+                  </td>
                   <td style={{ ...tdStyle, textAlign: 'right', color: '#6a5a4a' }}>{formatPeso(move.pesoActual)}</td>
                   <td style={{ ...tdStyle, textAlign: 'right', color: 'var(--color-primary)', fontWeight: 500 }}>
                     {formatPeso(move.pesoObjetivo)}
