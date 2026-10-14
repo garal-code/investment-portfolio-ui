@@ -37,15 +37,15 @@ Branch: `feat/analisis-rediseno`, stacked on `fix/sin-tipo-cambio` (34edd00) -> 
 
 ## Tasks
 
-- [ ] T1 — S1: remove `CifrasClave` + `PesosTable`; comparison once; moves table gains `Valor`; min-variance
+- [x] T1 — S1: remove `CifrasClave` + `PesosTable`; comparison once; moves table gains `Valor`; min-variance
   shortcut selects frontier point 0; header link `Cómo se calcula` -> `/analisis/metodologia` in a new tab; drop
-  the in-page `Metodologia` section. Route: worker. Commit: —
+  the in-page `Metodologia` section. Route: worker. Commit: 9a1566a
 - [ ] T2 — S3 (S1 item 4): calculation detail as always-visible charts (prices base 100, monthly returns, stats
   bars, correlation + covariance heatmaps, current value per position) with a "Ver datos" table toggle each.
   Route: worker. Commit: —
-- [ ] T3 — S2: analyst methodology `docs/metodologia-markowitz.md` (math, no code/function/parameter names)
-  rendered at `/analisis/metodologia` with Markdown + KaTeX. Route: worker. Commit: —
-- [ ] T4 — S4: sidebar collapses to an icon rail, state persisted. Route: worker. Commit: —
+- [x] T3 — S2: analyst methodology `docs/metodologia-markowitz.md` (math, no code/function/parameter names)
+  rendered at `/analisis/metodologia` with Markdown + KaTeX. Route: worker. Commit: ef528d9
+- [x] T4 — S4: sidebar collapses to an icon rail, state persisted. Route: worker. Commit: 22a0156
 - [ ] T5 — Visual check with Playwright + independent verify (new dependencies = risk item 5). Route: parent +
   gentle-ai-verify. Commit: —
 
@@ -71,3 +71,10 @@ Branch: `feat/analisis-rediseno`, stacked on `fix/sin-tipo-cambio` (34edd00) -> 
 - L5 (decision, parent): exact pins react-markdown 10.1.0, remark-gfm 4.0.1, remark-math 6.0.0, rehype-katex
   7.0.1, katex 0.16.47. Accepted low advisory GHSA-238p-pmpm-9mq7 (katex < 0.18.2; rehype-katex requires ^0.16):
   the only input is a static repo-owned document, never user content.
+- L6 (evidence) T4 22a0156: sidebar collapses to 64px rail from lg, state in localStorage `garal.sidebar.collapsed.v1`;
+  RED = missing module/button; GREEN 15 tests. Parent fix: version text hidden only on the desktop rail (`lg:hidden`),
+  not in the mobile drawer.
+- L7 (evidence) T1 9a1566a: CifrasClave, PesosTable, in-page Metodologia removed; Valor column; "Mínima varianza"
+  shortcut -> point 0 (card label switches); "¿Cómo se calcula?" is a new-tab link. RED 10 tests; GREEN 40 focused.
+- L8 (evidence) T3 ef528d9: analyst doc (217 lines, no code refs) + /analisis/metodologia (Markdown + KaTeX).
+  RED = missing modules; GREEN 7 tests. Playwright: page renders, KaTeX formulas and tables OK, 0 console warnings.
