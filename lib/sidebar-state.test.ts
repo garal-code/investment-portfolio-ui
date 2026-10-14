@@ -1,9 +1,10 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { SIDEBAR_COLLAPSED_KEY, useSidebarCollapsed } from './sidebar-state'
+import { SIDEBAR_COLLAPSED_KEY, resetSidebarCollapsedMemory, useSidebarCollapsed } from './sidebar-state'
 
 afterEach(() => {
   vi.restoreAllMocks()
+  resetSidebarCollapsedMemory()
 })
 
 describe('useSidebarCollapsed', () => {
@@ -13,12 +14,36 @@ describe('useSidebarCollapsed', () => {
     await waitFor(() => expect(result.current.collapsed).toBe(false))
   })
 
-  it('applies the stored value after mount', async () => {
+  it('applies the stored value', async () => {
     window.localStorage.setItem(SIDEBAR_COLLAPSED_KEY, 'true')
 
     const { result } = renderHook(() => useSidebarCollapsed())
 
     await waitFor(() => expect(result.current.collapsed).toBe(true))
+  })
+
+  // Every page mounts its own AppShell: a sidebar that started expanded and
+  // collapsed after mount would flash open on each navigation.
+  it('renders collapsed on the very first render when the stored value says so', () => {
+    window.localStorage.setItem(SIDEBAR_COLLAPSED_KEY, 'true')
+    const renders: boolean[] = []
+
+    renderHook(() => {
+      const state = useSidebarCollapsed()
+      renders.push(state.collapsed)
+      return state
+    })
+
+    expect(renders[0]).toBe(true)
+  })
+
+  it('shares the state between mounted sidebars', () => {
+    const a = renderHook(() => useSidebarCollapsed())
+    const b = renderHook(() => useSidebarCollapsed())
+
+    act(() => a.result.current.toggle())
+
+    expect(b.result.current.collapsed).toBe(true)
   })
 
   it('toggle flips the state and persists it', async () => {

@@ -1,4 +1,5 @@
 'use client'
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -29,6 +30,9 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   const { user } = useAuth()
   const displayName = user?.nombre || user?.email || 'Cargando...'
   const { collapsed, toggle } = useSidebarCollapsed()
+  // Width animates only on a user toggle, never when a reload hydrates the
+  // stored state.
+  const [animarAncho, setAnimarAncho] = useState(false)
   const initials = displayName
     .split(/\s+/)
     .slice(0, 2)
@@ -51,7 +55,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
 
       <aside
         data-collapsed={collapsed}
-        className={`fixed inset-y-0 left-0 z-50 w-[200px] min-h-screen flex flex-col shrink-0 transition-[transform,width] duration-200 ease-in-out lg:static lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 w-[200px] min-h-screen flex flex-col shrink-0 ${animarAncho ? 'transition-[transform,width]' : 'transition-transform'} duration-200 ease-in-out lg:static lg:translate-x-0 ${
           collapsed ? 'lg:w-[64px]' : 'lg:w-[200px]'
         } ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
         style={{ background: 'var(--color-sidebar)' }}
@@ -117,7 +121,10 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
           </p>
           <button
             type="button"
-            onClick={toggle}
+            onClick={() => {
+              setAnimarAncho(true)
+              toggle()
+            }}
             aria-expanded={!collapsed}
             aria-label={collapsed ? 'Expandir menú' : 'Contraer menú'}
             title={collapsed ? 'Expandir menú' : 'Contraer menú'}
