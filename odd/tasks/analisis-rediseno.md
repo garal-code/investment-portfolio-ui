@@ -46,8 +46,8 @@ Branch: `feat/analisis-rediseno`, stacked on `fix/sin-tipo-cambio` (34edd00) -> 
 - [x] T3 — S2: analyst methodology `docs/metodologia-markowitz.md` (math, no code/function/parameter names)
   rendered at `/analisis/metodologia` with Markdown + KaTeX. Route: worker. Commit: ef528d9
 - [x] T4 — S4: sidebar collapses to an icon rail, state persisted. Route: worker. Commit: 22a0156
-- [ ] T5 — Visual check with Playwright + independent verify (new dependencies = risk item 5). Route: parent +
-  gentle-ai-verify. Commit: —
+- [x] T5 — Visual check with Playwright + independent verify (new dependencies = risk item 5). Route: parent +
+  gentle-ai-verify. Commit: see L11
 
 ## Log
 
@@ -86,3 +86,13 @@ Branch: `feat/analisis-rediseno`, stacked on `fix/sin-tipo-cambio` (34edd00) -> 
   varianza" selects point 0 and relabels the card; methodology link `_blank` + `noopener noreferrer`; 390px
   mobile: tables/heatmaps scroll horizontally. Note: in dev the Next.js devtools badge overlaps the sidebar
   footer toggle (dev-only overlay).
+- L11 (evidence) T5: `next build` OK (/analisis/metodologia prerendered static). Native assess of the slice
+  34edd00..HEAD: medium, reviewDue false (no native review started; inspect offered a START over the accumulated
+  branch from 8c72e7e, not started). Independent verify: S1 PASS, S2 PASS (formulas match the backend doc; no
+  path traversal; route protected), S3 PASS with advisories, S4 PARTIAL -> sidebar flicker confirmed in Playwright
+  (64 -> 200 -> animated back to 64 on navigation). Fixed in 156977b (shared useSyncExternalStore store, width
+  animates only on user toggle; RED: 2 tests, first-render collapsed + shared state). After fix, navigation stays
+  at 64px; a reload jumps 200 -> 64 without animation (server HTML cannot know localStorage). 7e41703 adds verifier's
+  markdown safety tests (raw HTML, javascript: links, KaTeX \href; passed at once, they pin existing behaviour).
+  Suite 306/306, tsc clean. Open advisories (not fixed): covariance heatmap colour does not show sign;
+  colorCorrelacion(NaN) unguarded (backend sends 0); doc file relies on static prerender under standalone output.
