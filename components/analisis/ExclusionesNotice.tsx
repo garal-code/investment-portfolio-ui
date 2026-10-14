@@ -5,6 +5,7 @@ import type { ActivoExcluido, MotivoExclusion } from '@/types'
 export const MOTIVO_EXCLUSION_LABEL: Record<MotivoExclusion, string> = {
   sin_ticker: 'sin ticker',
   sin_precio_actual: 'sin precio actual',
+  sin_tipo_cambio: 'sin tipo de cambio',
   sin_historico: 'sin histórico de precios',
   historico_insuficiente: 'histórico insuficiente (< 12 meses)',
 }

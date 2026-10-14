@@ -15,8 +15,12 @@ export interface PositionViewModel {
   moneda: string
   cantidad: number
   precioMedio: number
-  precioActualEur: number
+  // undefined when the EUR price is unknown: no price at all, or a foreign
+  // position whose current FX rate is missing (never the native price).
+  precioActualEur?: number
   precioActualNativo?: number
+  // Foreign position with a native price but no current EUR/currency FX rate.
+  sinTipoCambio: boolean
   valorEur: number
   costeTotal: number
   plusvalia: number
@@ -34,6 +38,9 @@ export function buildPositionViewModels(posiciones: Posicion[], total: number): 
     const rentabilidadPct =
       pos.rentabilidad_pct ?? (costeTotal > 0 ? (valorEur / costeTotal - 1) * 100 : 0)
     const esDivisaExtranjera = !!pos.moneda_nativa && pos.moneda_nativa !== 'EUR'
+    const precioActualEur =
+      pos.precio_actual_eur ?? (esDivisaExtranjera ? undefined : pos.precio_actual) ?? undefined
+    const sinTipoCambio = esDivisaExtranjera && pos.precio_actual_nativo != null && precioActualEur == null
 
     return {
       isin: pos.instrumento.isin,
@@ -45,8 +52,9 @@ export function buildPositionViewModels(posiciones: Posicion[], total: number): 
       moneda: pos.instrumento.moneda ?? pos.moneda_nativa ?? 'EUR',
       cantidad: pos.cantidad_actual,
       precioMedio: pos.precio_medio,
-      precioActualEur: pos.precio_actual_eur ?? pos.precio_actual ?? 0,
-      precioActualNativo: esDivisaExtranjera ? pos.precio_actual_nativo : undefined,
+      precioActualEur,
+      precioActualNativo: esDivisaExtranjera ? (pos.precio_actual_nativo ?? undefined) : undefined,
+      sinTipoCambio,
       valorEur,
       costeTotal,
       plusvalia,

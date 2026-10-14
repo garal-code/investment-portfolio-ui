@@ -26,6 +26,7 @@ describe('Metodologia', () => {
     expect(within(region).getByText(/al menos 12 meses comunes/)).toBeVisible()
     expect(within(region).getByText(/n − 1/)).toBeVisible()
     expect(within(region).getByText(/sin ventas en corto/)).toBeVisible()
+    expect(within(region).getByText(/no tienen tipo de cambio actual/)).toBeVisible()
     expect(within(region).getByText(/no una recomendación de inversión/)).toBeVisible()
   })
 })

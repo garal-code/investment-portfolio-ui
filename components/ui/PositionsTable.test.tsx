@@ -17,6 +17,7 @@ function vm(overrides: Partial<PositionViewModel> & { isin: string }): PositionV
     cantidad: 10,
     precioMedio: 10,
     precioActualEur: 10,
+    sinTipoCambio: false,
     valorEur: 1000,
     costeTotal: 900,
     plusvalia: 100,

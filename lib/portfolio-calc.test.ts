@@ -113,6 +113,86 @@ describe('buildPositionViewModels — derived math', () => {
   })
 })
 
+// garal-screener's shape for a non-EUR position whose native price is known
+// but whose current EUR/currency FX rate is not: native fields only.
+const aaplSinFx = posicion({
+  instrumento: {
+    id: 6, isin: 'US0378331005', ticker: 'AAPL', nombre: 'Apple',
+    tipo: 'Acción', sector: 'Tecnología', pais: 'EE. UU.', moneda: 'USD',
+  },
+  cantidad_actual: 10,
+  coste_total: 1500,
+  precio_medio: 150,
+  precio_actual: 200,
+  precio_actual_nativo: 200,
+  valor_actual_nativo: 2000,
+  moneda_nativa: 'USD',
+  valor_actual: null,
+  valor_actual_eur: null,
+  precio_actual_eur: null,
+  plusvalia_latente: null,
+  rentabilidad_pct: null,
+  plusvalia_total: null,
+  fx_actual: null,
+})
+
+const sinPrecio = posicion({
+  instrumento: { id: 7, isin: 'NOPRICE00000', ticker: 'NOP', nombre: 'No Price', moneda: 'EUR' },
+  coste_total: 500,
+  moneda_nativa: 'EUR',
+})
+
+describe('buildPositionViewModels — unknown EUR value', () => {
+  it('values a position without FX rate at cost, like a missing price, with no fake gain', () => {
+    const total = 1500 + 3612
+    const [vm] = buildPositionViewModels([aaplSinFx, itx], total)
+
+    expect(vm.valorEur).toBe(1500)
+    expect(vm.plusvalia).toBe(0)
+    expect(vm.rentabilidadPct).toBe(0)
+    expect(vm.peso).toBeCloseTo(1500 / total, 6)
+    expect(vm.precioActualNativo).toBe(200)
+    expect(vm.sinTipoCambio).toBe(true)
+  })
+
+  it('never reports the native price as the EUR price when the FX rate is missing', () => {
+    const [vm] = buildPositionViewModels([aaplSinFx], 1500)
+    expect(vm.precioActualEur).toBeUndefined()
+  })
+
+  it('leaves the EUR price unknown (not 0) when there is no price at all', () => {
+    const [vm] = buildPositionViewModels([sinPrecio], 500)
+    expect(vm.precioActualEur).toBeUndefined()
+    expect(vm.valorEur).toBe(500)
+    expect(vm.sinTipoCambio).toBe(false)
+  })
+
+  it('keeps EUR prices from a known FX rate and from EUR positions', () => {
+    const [usd, eur] = buildPositionViewModels([msft, itx], 5635 + 3612)
+    expect(usd.precioActualEur).toBe(402.5)
+    expect(usd.sinTipoCambio).toBe(false)
+    expect(eur.precioActualEur).toBe(51.6)
+    expect(eur.sinTipoCambio).toBe(false)
+  })
+
+  it('falls back to precio_actual for an EUR position without precio_actual_eur', () => {
+    const [vm] = buildPositionViewModels([{ ...itx, precio_actual_eur: undefined, precio_actual: 51.6 }], 3612)
+    expect(vm.precioActualEur).toBe(51.6)
+  })
+
+  it('aggregates groups with finite values when a position lacks a FX rate', () => {
+    const vms = buildPositionViewModels([aaplSinFx, msft, itx], 1500 + 5635 + 3612)
+    for (const grupo of ['posicion', 'sector', 'pais', 'tipo'] as const) {
+      for (const g of groupPositions(vms, grupo)) {
+        expect(Number.isFinite(g.valor)).toBe(true)
+        expect(Number.isFinite(g.peso)).toBe(true)
+      }
+    }
+    const [tecnologia] = groupPositions(vms, 'sector')
+    expect(tecnologia.valor).toBe(1500 + 5635)
+  })
+})
+
 describe('groupPositions — grouping modes', () => {
   const total = 5635 + 3612
   const vms = buildPositionViewModels([msft, itx], total)
@@ -230,6 +310,24 @@ describe('applyPeriodoRentabilidad', () => {
     expect(m.valorEur).toBe(base[0].valorEur)
     expect(m.peso).toBe(base[0].peso)
     expect(i).toEqual(base[1])
+  })
+
+  it('overlays only the realised period gain of a position without FX rate (valor_actual null)', () => {
+    const [sinFx] = buildPositionViewModels([aaplSinFx], 1500)
+    const rent = {
+      posiciones: [
+        {
+          instrumento: aaplSinFx.instrumento, cantidad_actual: 10, coste_total: 1500,
+          valor_actual: null, plusvalia_latente: null, plusvalia_realizada: 0,
+          plusvalia_total: 0, rentabilidad_pct: 0,
+        },
+      ],
+      tickers_sin_dato: [],
+    } as unknown as RentabilidadCartera
+    const [vm] = applyPeriodoRentabilidad([sinFx], rent)
+    expect(vm.plusvalia).toBe(0)
+    expect(vm.rentabilidadPct).toBe(0)
+    expect(vm.valorEur).toBe(1500)
   })
 
   it('ignores a degraded period (every ticker without data)', () => {

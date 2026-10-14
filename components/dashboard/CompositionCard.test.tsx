@@ -38,6 +38,7 @@ function pv(overrides: Partial<PositionViewModel> & { isin: string; peso: number
     cantidad: 10,
     precioMedio: 10,
     precioActualEur: 10,
+    sinTipoCambio: false,
     valorEur: overrides.peso * 1000,
     costeTotal: overrides.peso * 900,
     plusvalia: overrides.peso * 100,
