@@ -1,8 +1,22 @@
+import { cloneElement, isValidElement, type ReactElement, type ReactNode } from 'react'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { PreferencesProvider } from '@/lib/preferences'
 import { DetalleCalculo } from './DetalleCalculo'
 import { fronteraEficienteFixture as frontera } from '@/test/mocks/fixtures/fronteraEficiente'
+
+// jsdom has no layout, so ResponsiveContainer measures 0x0 and recharts draws
+// nothing. Give the charts a fixed size so labels and legends are rendered.
+vi.mock('recharts', async importOriginal => {
+  const actual = await importOriginal<typeof import('recharts')>()
+  return {
+    ...actual,
+    ResponsiveContainer: ({ children }: { children: ReactNode }) =>
+      isValidElement(children)
+        ? cloneElement(children as ReactElement<{ width: number; height: number }>, { width: 600, height: 300 })
+        : null,
+  }
+})
 
 const STORAGE_KEY = 'garal.preferences.v1'
 
@@ -15,55 +29,83 @@ const PASOS = [
   'Valor actual por posición',
 ]
 
-function renderDetalle() {
+function renderDetalle(data = frontera) {
   return render(
     <PreferencesProvider>
-      <DetalleCalculo frontera={frontera} />
+      <DetalleCalculo frontera={data} />
     </PreferencesProvider>,
   )
 }
 
-// Opens the step whose summary reads `title` and returns its table. The body
-// mounts on the `toggle` event, which fires asynchronously after the click.
-function expandir(title: string) {
-  fireEvent.click(screen.getByText(title, { selector: 'summary *' }))
-  return screen.findByRole('table', { name: title })
+function paso(title: string) {
+  return screen.getByRole('region', { name: title })
 }
 
-describe('DetalleCalculo — collapsible steps', () => {
-  it('renders every step summary collapsed by default', () => {
+// Clicks the "Ver datos" toggle of a step and returns its table.
+function verDatos(title: string) {
+  fireEvent.click(within(paso(title)).getByRole('button', { name: /ver datos/i }))
+  return within(paso(title)).getByRole('table', { name: title })
+}
+
+describe('DetalleCalculo — visual steps', () => {
+  it('shows the section and every step title without expanding anything', () => {
     renderDetalle()
 
     expect(screen.getByRole('region', { name: 'Detalle del cálculo' })).toBeInTheDocument()
     for (const title of PASOS) {
-      const details = screen.getByText(title, { selector: 'summary *' }).closest('details')
-      expect(details).not.toBeNull()
-      expect(details).not.toHaveAttribute('open')
+      expect(screen.getByRole('heading', { name: title })).toBeVisible()
     }
-    expect(screen.queryByRole('table')).not.toBeInTheDocument()
+    expect(document.querySelector('details')).toBeNull()
   })
 
-  it('explains each step in one line', () => {
+  it('gives every step a chart with an accessible name', () => {
+    renderDetalle()
+
+    for (const title of PASOS) {
+      expect(within(paso(title)).getAllByRole('img').length).toBeGreaterThan(0)
+    }
+    expect(within(paso('Precios mensuales')).getByRole('img', { name: /base 100/i })).toBeInTheDocument()
+  })
+
+  it('explains each step and the base 100 rebasing', () => {
     renderDetalle()
 
     expect(screen.getByText(/cierre del mes \/ cierre del mes anterior − 1/)).toBeInTheDocument()
+    expect(within(paso('Precios mensuales')).getByText(/base 100/i, { selector: 'p' })).toBeInTheDocument()
   })
 
-  it('opens a step when its summary is clicked', async () => {
+  it('hides every table until "Ver datos" is clicked', () => {
     renderDetalle()
 
-    await expandir('Precios mensuales')
-    expect(screen.getByText('Precios mensuales', { selector: 'summary *' }).closest('details')).toHaveAttribute('open')
+    expect(screen.queryByRole('table')).not.toBeInTheDocument()
+    for (const title of PASOS) {
+      expect(within(paso(title)).getByRole('button', { name: /ver datos/i })).toHaveAttribute('aria-expanded', 'false')
+    }
+  })
+
+  it('toggles a table open and closed from its button', () => {
+    renderDetalle()
+
+    verDatos('Precios mensuales')
+    const boton = within(paso('Precios mensuales')).getByRole('button', { name: /datos/i })
+    expect(boton).toHaveAttribute('aria-expanded', 'true')
+    expect(boton).toHaveAccessibleName(/ocultar datos/i)
+
+    fireEvent.click(boton)
+    expect(screen.queryByRole('table')).not.toBeInTheDocument()
+    expect(boton).toHaveAttribute('aria-expanded', 'false')
   })
 })
 
 describe('DetalleCalculo — monthly prices', () => {
-  it('has one row per price month and one column per ticker', async () => {
+  it('draws one legend entry per ticker and keeps the raw prices in the table', () => {
     renderDetalle()
 
-    const table = await expandir('Precios mensuales')
+    const legend = within(paso('Precios mensuales')).getByRole('list', { name: 'Leyenda' })
+    expect(within(legend).getAllByRole('listitem').map(li => li.textContent)).toEqual(frontera.tickers)
+
+    const table = verDatos('Precios mensuales')
     const rows = within(table).getAllByRole('row')
-    // Header row + one row per month.
     expect(rows).toHaveLength(frontera.detalle.datos.fechas_precios.length + 1)
     const headers = within(rows[0]).getAllByRole('columnheader').map(th => th.textContent)
     expect(headers).toEqual(['Mes', ...frontera.tickers])
@@ -76,10 +118,16 @@ describe('DetalleCalculo — monthly prices', () => {
 })
 
 describe('DetalleCalculo — monthly returns', () => {
-  it('includes the current portfolio column and distinguishes negative returns', async () => {
+  it('lists the current portfolio in the legend and its table column', () => {
     renderDetalle()
 
-    const table = await expandir('Rentabilidades mensuales')
+    const legend = within(paso('Rentabilidades mensuales')).getByRole('list', { name: 'Leyenda' })
+    expect(within(legend).getAllByRole('listitem').map(li => li.textContent)).toEqual([
+      ...frontera.tickers,
+      'Cartera actual',
+    ])
+
+    const table = verDatos('Rentabilidades mensuales')
     const headers = within(within(table).getAllByRole('row')[0]).getAllByRole('columnheader').map(th => th.textContent)
     expect(headers).toEqual(['Mes', ...frontera.tickers, 'Cartera actual'])
     expect(within(table).getAllByRole('row')).toHaveLength(frontera.detalle.datos.fechas.length + 1)
@@ -96,10 +144,16 @@ describe('DetalleCalculo — monthly returns', () => {
 })
 
 describe('DetalleCalculo — per-asset statistics', () => {
-  it('shows expected return, raw variance and volatility per ticker', async () => {
+  it('charts expected return and volatility and keeps the variance in the table', () => {
     renderDetalle()
 
-    const table = await expandir('Estadísticas por activo')
+    const legend = within(paso('Estadísticas por activo')).getByRole('list', { name: 'Leyenda' })
+    expect(within(legend).getAllByRole('listitem').map(li => li.textContent)).toEqual([
+      'Rentabilidad esperada',
+      'Volatilidad',
+    ])
+
+    const table = verDatos('Estadísticas por activo')
     const aapl = within(table).getByRole('row', { name: /AAPL/ })
     expect(within(aapl).getByText('2,18 %')).toBeInTheDocument()
     expect(within(aapl).getByText('0,002052')).toBeInTheDocument()
@@ -108,40 +162,50 @@ describe('DetalleCalculo — per-asset statistics', () => {
 })
 
 describe('DetalleCalculo — matrices', () => {
-  it('shows 1,00 on the correlation diagonal', async () => {
+  it('shows the formatted correlations inside the heatmap cells', () => {
     renderDetalle()
 
-    const table = await expandir('Matriz de correlaciones')
+    const heatmap = within(paso('Matriz de correlaciones')).getByRole('img', { name: /mapa de calor.*correlaciones/i })
+    // 3 diagonal cells at 1,00, plus each off-diagonal pair twice.
+    expect(within(heatmap).getAllByText('1,00')).toHaveLength(frontera.tickers.length)
+    expect(within(heatmap).getAllByText('0,23')).toHaveLength(2)
+    expect(within(heatmap).getAllByText('0,63')).toHaveLength(2)
+    for (const ticker of frontera.tickers) {
+      expect(within(heatmap).getAllByText(ticker).length).toBeGreaterThan(0)
+    }
+  })
+
+  it('colours negative correlations apart from positive ones', () => {
+    const conNegativa = structuredClone(frontera)
+    conNegativa.detalle.estadisticas.matriz_correlaciones[0][1] = -0.4
+    renderDetalle(conNegativa)
+
+    const heatmap = within(paso('Matriz de correlaciones')).getByRole('img')
+    const negativa = within(heatmap).getByText('−0,40')
+    const positiva = within(heatmap).getAllByText('0,63')[0]
+    expect(negativa.style.background).not.toBe('')
+    expect(negativa.style.background).not.toBe(positiva.style.background)
+  })
+
+  it('keeps the correlation table behind "Ver datos" with 1,00 on the diagonal', () => {
+    renderDetalle()
+
+    const table = verDatos('Matriz de correlaciones')
     frontera.tickers.forEach((ticker, i) => {
       const cells = within(within(table).getByRole('row', { name: new RegExp(`^${ticker.replace('.', '\\.')}`) })).getAllByRole('cell')
       expect(cells).toHaveLength(frontera.tickers.length)
       expect(cells[i]).toHaveTextContent('1,00')
     })
-    const msft = within(table).getByRole('row', { name: /^MSFT/ })
-    expect(within(msft).getByText('0,23')).toBeInTheDocument()
   })
 
-  it('colours negative correlations apart from positive ones', async () => {
-    const conNegativa = structuredClone(frontera)
-    conNegativa.detalle.estadisticas.matriz_correlaciones[0][1] = -0.4
-    render(
-      <PreferencesProvider>
-        <DetalleCalculo frontera={conNegativa} />
-      </PreferencesProvider>,
-    )
-
-    const table = await expandir('Matriz de correlaciones')
-    const aapl = within(table).getByRole('row', { name: /^AAPL/ })
-    const negativa = within(aapl).getByText('−0,40')
-    const positiva = within(aapl).getByText('0,63')
-    expect(negativa.style.background).not.toBe('')
-    expect(negativa.style.background).not.toBe(positiva.style.background)
-  })
-
-  it('shows raw covariances in fixed notation', async () => {
+  it('shows raw covariances in fixed notation in the heatmap and the table', () => {
     renderDetalle()
 
-    const table = await expandir('Matriz de varianzas-covarianzas')
+    const heatmap = within(paso('Matriz de varianzas-covarianzas')).getByRole('img', { name: /mapa de calor.*covarianzas/i })
+    expect(within(heatmap).getAllByText('0,001878')).toHaveLength(2)
+    expect(within(heatmap).getByText('0,004322')).toBeInTheDocument()
+
+    const table = verDatos('Matriz de varianzas-covarianzas')
     const san = within(table).getByRole('row', { name: /^SAN\.MC/ })
     expect(within(san).getByText('0,001878')).toBeInTheDocument()
     expect(within(san).getByText('0,000849')).toBeInTheDocument()
@@ -150,10 +214,13 @@ describe('DetalleCalculo — matrices', () => {
 })
 
 describe('DetalleCalculo — current value per position', () => {
-  it('shows EUR value and weight per ticker', async () => {
+  it('labels each bar with EUR value and weight, and keeps them in the table', () => {
     renderDetalle()
 
-    const table = await expandir('Valor actual por posición')
+    const chart = within(paso('Valor actual por posición')).getByRole('img')
+    expect(within(chart).getByText('3.100,00 € · 31,0 %')).toBeInTheDocument()
+
+    const table = verDatos('Valor actual por posición')
     const msft = within(table).getByRole('row', { name: /MSFT/ })
     expect(within(msft).getByText('3.100,00 €')).toBeInTheDocument()
     expect(within(msft).getByText('31,0 %')).toBeInTheDocument()
@@ -162,12 +229,16 @@ describe('DetalleCalculo — current value per position', () => {
     expect(within(total).getByText('100,0 %')).toBeInTheDocument()
   })
 
-  it('masks EUR values in privacy mode but keeps weights', async () => {
+  it('masks EUR values in the chart and the table in privacy mode but keeps weights', async () => {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ privacy: true }))
     renderDetalle()
 
-    const table = await expandir('Valor actual por posición')
-    await waitFor(() => expect(within(table).getAllByText('••••• €')).toHaveLength(frontera.tickers.length + 1))
+    const chart = within(paso('Valor actual por posición')).getByRole('img')
+    await waitFor(() => expect(within(chart).getByText('••••• € · 31,0 %')).toBeInTheDocument())
+    expect(within(chart).queryByText(/3\.100,00/)).not.toBeInTheDocument()
+
+    const table = verDatos('Valor actual por posición')
+    expect(within(table).getAllByText('••••• €')).toHaveLength(frontera.tickers.length + 1)
     expect(within(table).queryByText('3.100,00 €')).not.toBeInTheDocument()
     expect(within(table).queryByText('10.000,00 €')).not.toBeInTheDocument()
     expect(within(table).getByText('31,0 %')).toBeInTheDocument()

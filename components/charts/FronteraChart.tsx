@@ -3,6 +3,7 @@ import { useId } from 'react'
 import {
   CartesianGrid, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis, ZAxis,
 } from 'recharts'
+import { INITIAL_DIMENSION } from './initialDimension'
 import { formatNum, formatPct, formatPeso, formatRatioPct } from '@/lib/utils'
 import type { PuntoCartera } from '@/types'
 
@@ -122,7 +123,7 @@ export function FronteraChart({
   return (
     <div className="flex flex-col gap-3">
       <div className="h-[260px] md:h-[340px]" role="img" aria-label="Gráfico de riesgo y rentabilidad mensual">
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer width="100%" height="100%" initialDimension={INITIAL_DIMENSION}>
           <ScatterChart margin={{ top: 8, right: 16, bottom: 24, left: 8 }}>
             <CartesianGrid stroke="#f5f0eb" />
             <XAxis
