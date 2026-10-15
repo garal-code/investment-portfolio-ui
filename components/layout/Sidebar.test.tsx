@@ -75,6 +75,16 @@ describe('Sidebar — collapsible', () => {
     expect(toggle.compareDocumentPosition(firstLink) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
+  it('shows the toggle as an icon only, in the header next to the user name', () => {
+    usePathnameMock.mockReturnValue('/dashboard')
+    render(<Sidebar />)
+
+    const toggle = screen.getByRole('button', { name: 'Contraer menú' })
+    expect(toggle).toHaveTextContent('')
+    expect(screen.queryByText('Contraer')).not.toBeInTheDocument()
+    expect(toggle.parentElement).toContainElement(screen.getByText('Demo'))
+  })
+
   it('stays pinned to the viewport on desktop so the toggle never scrolls away', () => {
     usePathnameMock.mockReturnValue('/dashboard')
     render(<Sidebar />)
