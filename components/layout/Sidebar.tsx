@@ -65,43 +65,39 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
           className={`px-5 pt-6 pb-5 ${collapsed ? 'lg:px-2' : ''}`}
           style={{ borderBottom: '1px solid rgba(255,255,255,.14)' }}
         >
-          {collapsed && (
-            <div
-              className="hidden lg:block font-serif text-[19px] font-bold text-white text-center"
-              title={displayName}
+          {/* Collapse toggle sits in the header's top-right corner; on the
+              narrow collapsed rail it stacks above the initials instead. */}
+          <div className={`flex items-start gap-2 ${collapsed ? 'lg:flex-col-reverse lg:items-center lg:gap-3' : ''}`}>
+            {collapsed && (
+              <div
+                className="hidden lg:block font-serif text-[19px] font-bold text-white text-center"
+                title={displayName}
+              >
+                {initials}
+              </div>
+            )}
+            <div className={`flex-1 min-w-0 ${collapsed ? 'lg:hidden' : ''}`}>
+              <div className="font-serif text-[19px] font-bold text-white tracking-tight truncate">
+                {displayName}
+              </div>
+              <div className="font-lora italic text-[12px] mt-0.5" style={{ color: 'rgba(255,255,255,.65)' }}>
+                mi cartera
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setAnimarAncho(true)
+                toggle()
+              }}
+              aria-expanded={!collapsed}
+              aria-label={collapsed ? 'Expandir menú' : 'Contraer menú'}
+              title={collapsed ? 'Expandir menú' : 'Contraer menú'}
+              className="hidden lg:flex shrink-0 items-center justify-center p-1.5 rounded-md text-white/70 hover:bg-[var(--color-sidebar-hover)] hover:text-white transition-colors"
             >
-              {initials}
-            </div>
-          )}
-          <div className={collapsed ? 'lg:hidden' : ''}>
-            <div className="font-serif text-[19px] font-bold text-white tracking-tight truncate">
-              {displayName}
-            </div>
-            <div className="font-lora italic text-[12px] mt-0.5" style={{ color: 'rgba(255,255,255,.65)' }}>
-              mi cartera
-            </div>
+              {collapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+            </button>
           </div>
-        </div>
-
-        {/* Collapse toggle: at the top so it stays reachable on long pages,
-            where the sidebar grows with the content. */}
-        <div className="hidden lg:block px-2.5 pt-3.5">
-          <button
-            type="button"
-            onClick={() => {
-              setAnimarAncho(true)
-              toggle()
-            }}
-            aria-expanded={!collapsed}
-            aria-label={collapsed ? 'Expandir menú' : 'Contraer menú'}
-            title={collapsed ? 'Expandir menú' : 'Contraer menú'}
-            className={`flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-[13px] text-white/70 hover:bg-[var(--color-sidebar-hover)] hover:text-white transition-colors ${
-              collapsed ? 'justify-center' : ''
-            }`}
-          >
-            {collapsed ? <PanelLeftOpen size={15} /> : <PanelLeftClose size={15} />}
-            {!collapsed && <span>Contraer</span>}
-          </button>
         </div>
 
         {/* Nav */}
