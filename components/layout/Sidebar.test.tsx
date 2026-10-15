@@ -75,6 +75,14 @@ describe('Sidebar — collapsible', () => {
     expect(toggle.compareDocumentPosition(firstLink) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
+  it('stays pinned to the viewport on desktop so the toggle never scrolls away', () => {
+    usePathnameMock.mockReturnValue('/dashboard')
+    render(<Sidebar />)
+
+    expect(aside()).toHaveClass('lg:sticky', 'lg:top-0', 'lg:h-screen')
+    expect(aside()).not.toHaveClass('lg:static')
+  })
+
   it('expands again', () => {
     usePathnameMock.mockReturnValue('/dashboard')
     render(<Sidebar />)
