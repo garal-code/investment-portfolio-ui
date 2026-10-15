@@ -21,7 +21,7 @@ vi.mock('@/components/layout/AppShell', () => ({
 }))
 vi.mock('@/components/layout/Topbar', () => ({ Topbar: () => null }))
 
-const FRONTERA_URL = '/api/v1/carteras/:id/frontera-eficiente'
+const FRONTERA_URL = '/api/v1/carteras/:id/markowitz'
 
 function renderPage() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
