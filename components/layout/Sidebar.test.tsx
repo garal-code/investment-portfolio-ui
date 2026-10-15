@@ -66,6 +66,15 @@ describe('Sidebar — collapsible', () => {
     expect(screen.getByText('D')).toBeInTheDocument()
   })
 
+  it('places the toggle above the navigation so it is visible without scrolling', () => {
+    usePathnameMock.mockReturnValue('/dashboard')
+    render(<Sidebar />)
+
+    const toggle = screen.getByRole('button', { name: 'Contraer menú' })
+    const firstLink = screen.getByRole('link', { name: 'Resumen' })
+    expect(toggle.compareDocumentPosition(firstLink) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
   it('expands again', () => {
     usePathnameMock.mockReturnValue('/dashboard')
     render(<Sidebar />)
