@@ -66,17 +66,20 @@ export interface Posicion {
   coste_total: number
   precio_medio: number
   plusvalia_realizada: number
-  precio_actual?: number
-  valor_actual?: number
-  plusvalia_latente?: number
-  rentabilidad_pct?: number
-  plusvalia_total?: number
-  precio_actual_eur?: number
-  precio_actual_nativo?: number
-  valor_actual_eur?: number
-  valor_actual_nativo?: number
+  // null when there is no current price. With a native price but no current
+  // EUR/currency FX rate, only the native fields are set: the EUR ones and
+  // fx_actual are null.
+  precio_actual?: number | null
+  valor_actual?: number | null
+  plusvalia_latente?: number | null
+  rentabilidad_pct?: number | null
+  plusvalia_total?: number | null
+  precio_actual_eur?: number | null
+  precio_actual_nativo?: number | null
+  valor_actual_eur?: number | null
+  valor_actual_nativo?: number | null
   moneda_nativa?: string
-  fx_actual?: number
+  fx_actual?: number | null
 }
 
 export interface ResumenCartera {
@@ -97,8 +100,8 @@ export interface PosicionRentabilidad {
   instrumento: Instrumento
   cantidad_actual: number
   coste_total: number
-  valor_actual?: number
-  plusvalia_latente?: number
+  valor_actual?: number | null      // null without current price or FX rate
+  plusvalia_latente?: number | null
   plusvalia_realizada: number
   plusvalia_total: number
   rentabilidad_pct: number
@@ -133,6 +136,7 @@ export interface PuntoCartera {
 export type MotivoExclusion =
   | 'sin_ticker'
   | 'sin_precio_actual'
+  | 'sin_tipo_cambio'
   | 'sin_historico'
   | 'historico_insuficiente'
 

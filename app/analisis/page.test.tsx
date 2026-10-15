@@ -83,6 +83,7 @@ describe('AnalisisPage — result', () => {
       excluidos: [
         { ticker: 'IE00B4L5Y983', motivo: 'sin_ticker' },
         { ticker: 'XYZ', motivo: 'sin_precio_actual' },
+        { ticker: 'AAPL', motivo: 'sin_tipo_cambio' },
         { ticker: 'NEW', motivo: 'sin_historico' },
         { ticker: 'IPO', motivo: 'historico_insuficiente' },
       ],
@@ -94,6 +95,7 @@ describe('AnalisisPage — result', () => {
     expect(within(notice).getByText(/25,0 %/)).toBeInTheDocument()
     expect(within(notice).getByText('IE00B4L5Y983').parentElement).toHaveTextContent('sin ticker')
     expect(within(notice).getByText('XYZ').parentElement).toHaveTextContent('sin precio actual')
+    expect(within(notice).getByText('AAPL').parentElement).toHaveTextContent('sin tipo de cambio')
     expect(within(notice).getByText('NEW').parentElement).toHaveTextContent('sin histórico de precios')
     expect(within(notice).getByText('IPO').parentElement).toHaveTextContent('histórico insuficiente (< 12 meses)')
   })

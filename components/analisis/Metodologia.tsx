@@ -22,8 +22,8 @@ const PASOS: { title: string; body: ReactNode }[] = [
     body: (
       <p>
         Las posiciones abiertas de la cartera. Se excluyen, y aparecen en el aviso de activos excluidos, las que no
-        tienen ticker, no tienen precio actual, no tienen histórico de precios o tienen menos de 12 meses de
-        histórico. Hacen falta al menos 2 activos válidos.
+        tienen ticker, no tienen precio actual, no tienen tipo de cambio actual a euros, no tienen histórico de
+        precios o tienen menos de 12 meses de histórico. Hacen falta al menos 2 activos válidos.
       </p>
     ),
   },

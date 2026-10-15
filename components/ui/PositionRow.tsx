@@ -94,7 +94,9 @@ export function PositionRow({ position: p, color, open, onToggle, onHover, activ
         </span>
         <span className="hidden md:flex" style={{ flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
           <span style={{ fontSize: 14, fontWeight: 500 }}>
-            {esDivisaExtranjera && p.precioActualNativo != null ? formatCurrency(p.precioActualNativo, p.moneda) : formatEur(p.precioActualEur)}
+            {esDivisaExtranjera && p.precioActualNativo != null
+              ? formatCurrency(p.precioActualNativo, p.moneda)
+              : formatPrecioEur(p.precioActualEur)}
           </span>
           <span style={{ fontSize: 12, color: '#a09080' }}>{formatCantidadPosicion(p.cantidad, p.tipo)}</span>
         </span>
@@ -122,8 +124,12 @@ export function PositionRow({ position: p, color, open, onToggle, onHover, activ
             <Detalle etiqueta="Precio medio" valor={formatEur(p.precioMedio)} />
             <Detalle
               etiqueta="Precio actual"
-              valor={formatEur(p.precioActualEur)}
-              sub={esDivisaExtranjera && p.precioActualNativo != null ? formatCurrency(p.precioActualNativo, p.moneda) : undefined}
+              valor={formatPrecioEur(p.precioActualEur)}
+              sub={
+                esDivisaExtranjera && p.precioActualNativo != null
+                  ? `${formatCurrency(p.precioActualNativo, p.moneda)}${p.sinTipoCambio ? ' · sin tipo de cambio' : ''}`
+                  : undefined
+              }
             />
             <Detalle etiqueta="Coste total" valor={monto(p.costeTotal)} />
             <Detalle etiqueta="Sector" valor={p.sector} />
@@ -138,6 +144,10 @@ export function PositionRow({ position: p, color, open, onToggle, onHover, activ
       )}
     </div>
   )
+}
+
+function formatPrecioEur(value: number | undefined): string {
+  return value == null ? '—' : formatEur(value)
 }
 
 function Detalle({ etiqueta, valor, sub }: { etiqueta: string; valor: string; sub?: string }) {
