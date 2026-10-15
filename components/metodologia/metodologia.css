@@ -1,0 +1,68 @@
+/* Reading styles for the methodology document, scoped to .metodologia-doc. */
+.metodologia-doc {
+  color: var(--color-ink);
+  font-family: var(--font-lora);
+  font-size: 16px;
+  line-height: 1.7;
+  overflow-wrap: break-word;
+}
+
+.metodologia-doc h1,
+.metodologia-doc h2,
+.metodologia-doc h3 {
+  font-family: var(--font-serif);
+  color: var(--color-ink);
+  line-height: 1.25;
+}
+
+.metodologia-doc h1 { font-size: 30px; font-weight: 800; margin: 0 0 20px; }
+.metodologia-doc h2 { font-size: 22px; font-weight: 700; margin: 40px 0 12px; }
+.metodologia-doc h3 { font-size: 17px; font-weight: 700; margin: 24px 0 8px; }
+
+.metodologia-doc p { margin: 0 0 14px; }
+.metodologia-doc ul,
+.metodologia-doc ol { margin: 0 0 14px; padding-left: 24px; }
+.metodologia-doc ul { list-style: disc; }
+.metodologia-doc ol { list-style: decimal; }
+.metodologia-doc li { margin-bottom: 4px; }
+.metodologia-doc strong { font-weight: 600; }
+.metodologia-doc a { color: var(--color-primary); text-decoration: underline; }
+.metodologia-doc hr { border: 0; border-top: 1px solid var(--color-border); margin: 32px 0; }
+
+.metodologia-doc blockquote {
+  margin: 0 0 14px;
+  padding: 8px 16px;
+  border-left: 3px solid var(--color-amber);
+  background: var(--color-surface);
+  color: var(--color-ink-2);
+}
+
+.metodologia-doc table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-sans);
+  font-size: 14px;
+}
+
+.metodologia-doc th,
+.metodologia-doc td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.metodologia-doc th {
+  background: var(--color-surface);
+  color: var(--color-ink-2);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* Wide formulas scroll horizontally instead of overflowing the column. */
+.metodologia-doc .katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 4px 0;
+  margin: 16px 0;
+}

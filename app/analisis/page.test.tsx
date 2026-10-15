@@ -53,28 +53,22 @@ describe('AnalisisPage — result', () => {
     expect(screen.getByText(/no anualizadas/)).toBeInTheDocument()
   })
 
-  it('lists current vs minimum-variance weights and EUR value per ticker', async () => {
+  it('drops the duplicated "Cifras clave" and "Pesos por activo" blocks', async () => {
     renderPage()
 
-    const pesos = await screen.findByRole('region', { name: 'Pesos por activo' })
-    const aapl = within(pesos).getByRole('row', { name: /AAPL/ })
-    expect(within(aapl).getByText('5.200,00 €')).toBeInTheDocument()
-    expect(within(aapl).getByText('52,0 %')).toBeInTheDocument()
-    expect(within(aapl).getByText('62,0 %')).toBeInTheDocument()
-
-    const san = within(pesos).getByRole('row', { name: /SAN\.MC/ })
-    expect(within(san).getByText('17,0 %')).toBeInTheDocument()
-    expect(within(san).getByText('12,0 %')).toBeInTheDocument()
+    await screen.findByText(/13 observaciones mensuales/)
+    expect(screen.queryByRole('region', { name: 'Cifras clave' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: 'Pesos por activo' })).not.toBeInTheDocument()
+    expect(screen.queryByText('Cifras clave')).not.toBeInTheDocument()
+    expect(screen.queryByText('Pesos por activo')).not.toBeInTheDocument()
   })
 
-  it('shows key figures for the current and minimum-variance portfolios', async () => {
+  it('shows the current-vs-chosen comparison only once', async () => {
     renderPage()
 
-    const figures = await screen.findByRole('region', { name: 'Cifras clave' })
-    expect(within(figures).getByText('+1,79 %')).toBeInTheDocument()
-    expect(within(figures).getByText('4,37 %')).toBeInTheDocument()
-    expect(within(figures).getByText('+1,82 %')).toBeInTheDocument()
-    expect(within(figures).getByText('4,36 %')).toBeInTheDocument()
+    await screen.findByText(/13 observaciones mensuales/)
+    expect(screen.getAllByText('Cartera actual', { selector: 'li span' })).toHaveLength(1)
+    expect(screen.getAllByRole('list', { name: 'Comparación con el punto elegido' })).toHaveLength(1)
   })
 
   it('shows the exclusions notice with a label per reason and the excluded share', async () => {
@@ -104,8 +98,8 @@ describe('AnalisisPage — result', () => {
     renderPage()
 
     const detalle = await screen.findByRole('region', { name: 'Detalle del cálculo' })
-    const pesos = screen.getByRole('region', { name: 'Pesos por activo' })
-    expect(pesos.compareDocumentPosition(detalle) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    const moves = screen.getByRole('region', { name: 'Movimientos para llegar al punto elegido' })
+    expect(moves.compareDocumentPosition(detalle) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(within(detalle).getByText('Matriz de correlaciones')).toBeInTheDocument()
   })
 
@@ -138,16 +132,44 @@ describe('AnalisisPage — rebalancing moves', () => {
     expect(within(msft).getByText('Vender')).toBeInTheDocument()
   })
 
-  it('places the moves right after the chart and before the key figures', async () => {
+  it('places the moves right after the chart and before the calculation detail', async () => {
     renderPage()
 
     const moves = await screen.findByRole('region', { name: MOVES })
     const chart = screen.getByRole('region', { name: 'Riesgo y rentabilidad' })
-    const cifras = screen.getByRole('region', { name: 'Cifras clave' })
+    const detalle = screen.getByRole('region', { name: 'Detalle del cálculo' })
     expect(chart.compareDocumentPosition(moves) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    expect(moves.compareDocumentPosition(cifras) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(moves.compareDocumentPosition(detalle) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
+  it('shows the current EUR value per ticker in the moves table', async () => {
+    renderPage()
+
+    const table = await screen.findByRole('table', { name: MOVES })
+    expect(within(within(table).getByRole('row', { name: /AAPL/ })).getByText('5.200,00 €')).toBeInTheDocument()
+    expect(within(within(table).getByRole('row', { name: /MSFT/ })).getByText('3.100,00 €')).toBeInTheDocument()
+    expect(within(within(table).getByRole('row', { name: /SAN\.MC/ })).getByText('1.700,00 €')).toBeInTheDocument()
+  })
+
+  it('selects the minimum-variance point from the shortcut and labels the target accordingly', async () => {
+    renderPage()
+
+    const slider = await screen.findByRole('slider', { name: 'Riesgo objetivo' })
+    fireEvent.change(slider, { target: { value: '2' } })
+    const resumen = screen.getByRole('list', { name: 'Comparación con el punto elegido' })
+    expect(within(resumen).getByText('Punto elegido')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mínima varianza' }))
+
+    expect(slider).toHaveValue('0')
+    expect(within(resumen).getByText('Mínima varianza')).toBeInTheDocument()
+    expect(within(resumen).queryByText('Punto elegido')).not.toBeInTheDocument()
+    const table = screen.getByRole('table', { name: MOVES })
+    const minima = fronteraEficienteFixture.cartera_minima_varianza.pesos
+    expect(within(within(table).getByRole('row', { name: /AAPL/ })).getByText('62,0 %')).toBeInTheDocument()
+    expect(within(within(table).getByRole('row', { name: /MSFT/ })).getByText('26,0 %')).toBeInTheDocument()
+    expect(minima).toEqual({ AAPL: 0.62, MSFT: 0.26, 'SAN.MC': 0.12 })
+  })
   it('updates target weights and amounts when the slider moves', async () => {
     renderPage()
 
@@ -186,51 +208,44 @@ describe('AnalisisPage — rebalancing moves', () => {
   })
 })
 
-describe('AnalisisPage — methodology', () => {
+describe('AnalisisPage — methodology link', () => {
   const METODOLOGIA = '¿Cómo se calcula?'
 
-  it('renders the methodology after the calculation detail, collapsed', async () => {
-    renderPage()
-
-    const detalle = await screen.findByRole('region', { name: 'Detalle del cálculo' })
-    const metodologia = screen.getByRole('region', { name: METODOLOGIA })
-    expect(detalle.compareDocumentPosition(metodologia) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    expect(within(metodologia).getByText(METODOLOGIA, { selector: 'summary *' }).closest('details')).not.toHaveAttribute(
-      'open',
-    )
-  })
-
-  it('opens the methodology from the header trigger', async () => {
+  it('links the header to the methodology page in a new tab', async () => {
     renderPage()
 
     await screen.findByText(/13 observaciones mensuales/)
     const header = screen.getByRole('region', { name: 'Frontera eficiente' })
-    fireEvent.click(within(header).getByRole('button', { name: METODOLOGIA }))
-
-    const metodologia = screen.getByRole('region', { name: METODOLOGIA })
-    expect(within(metodologia).getByText(METODOLOGIA, { selector: 'summary *' }).closest('details')).toHaveAttribute(
-      'open',
-    )
+    const link = within(header).getByRole('link', { name: METODOLOGIA })
+    expect(link).toHaveAttribute('href', '/analisis/metodologia')
+    expect(link).toHaveAttribute('target', '_blank')
+    expect(link).toHaveAttribute('rel', 'noopener noreferrer')
   })
 
-  it('keeps the trigger and the methodology on a 400 so the requirements can be read', async () => {
+  it('no longer renders the methodology section in the page', async () => {
+    renderPage()
+
+    await screen.findByText(/13 observaciones mensuales/)
+    expect(screen.queryByRole('region', { name: METODOLOGIA })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: METODOLOGIA })).not.toBeInTheDocument()
+  })
+
+  it('keeps the link on a 400 so the requirements can be read', async () => {
     const detail = 'No hay suficientes activos con histórico para calcular la frontera.'
     server.use(http.get(FRONTERA_URL, () => HttpResponse.json({ detail }, { status: 400 })))
     renderPage()
 
     await screen.findByText(detail)
     const header = screen.getByRole('region', { name: 'Frontera eficiente' })
-    expect(within(header).getByRole('button', { name: METODOLOGIA })).toBeInTheDocument()
-    expect(screen.getByRole('region', { name: METODOLOGIA })).toHaveTextContent(/12 meses/)
+    expect(within(header).getByRole('link', { name: METODOLOGIA })).toHaveAttribute('href', '/analisis/metodologia')
   })
 
-  it('does not render the methodology without a cartera', () => {
-    useActiveCarteraMock.mockReturnValue({ carteraId: null, carteras: [], isLoading: false })
+  it('does not render the link without a cartera', () => {
+    useActiveCarteraMock.mockReturnValue({ carteras: [], carteraId: null, isLoading: false })
     renderPage()
 
     expect(screen.getByText(/No tenés carteras todavía/)).toBeInTheDocument()
-    expect(screen.queryByRole('region', { name: METODOLOGIA })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: METODOLOGIA })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: METODOLOGIA })).not.toBeInTheDocument()
   })
 })
 

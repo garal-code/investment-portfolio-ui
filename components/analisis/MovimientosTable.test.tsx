@@ -1,6 +1,7 @@
 import { render, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { PreferencesProvider } from '@/lib/preferences'
+import { formatEur } from '@/lib/utils'
 import { MovimientosTable } from './MovimientosTable'
 import { fronteraEficienteFixture as frontera } from '@/test/mocks/fixtures/fronteraEficiente'
 import type { PuntoCartera } from '@/types'
@@ -8,13 +9,14 @@ import type { PuntoCartera } from '@/types'
 const STORAGE_KEY = 'garal.preferences.v1'
 const TITLE = 'Movimientos para llegar al punto elegido'
 
-function renderTable(objetivo: PuntoCartera = frontera.frontera[2]) {
+function renderTable(objetivo: PuntoCartera = frontera.frontera[2], esMinimaVarianza = false) {
   return render(
     <PreferencesProvider>
       <MovimientosTable
         tickers={frontera.tickers}
         actual={frontera.cartera_actual}
         objetivo={objetivo}
+        esMinimaVarianza={esMinimaVarianza}
         valoresEur={frontera.detalle.cartera_actual.valores_eur}
       />
     </PreferencesProvider>,
@@ -43,6 +45,36 @@ describe('MovimientosTable', () => {
     expect(within(san).getByText('+18,5 pp')).toBeInTheDocument()
     expect(within(san).getByText('+1.850,00 €')).toBeInTheDocument()
     expect(within(san).getByText('Comprar')).toBeInTheDocument()
+  })
+
+  it('shows the current EUR value of each ticker between the asset and the current weight', () => {
+    renderTable()
+
+    const table = screen.getByRole('table', { name: TITLE })
+    const headers = within(table).getAllByRole('columnheader').map(th => th.textContent)
+    expect(headers).toEqual(['Activo', 'Valor', 'Peso actual', 'Peso objetivo', 'Diferencia', 'Importe', 'Acción'])
+    const cells = (name: RegExp) => within(within(table).getByRole('row', { name })).getAllByRole('cell').map(td => td.textContent)
+    expect(cells(/AAPL/).slice(0, 2)).toEqual([formatEur(5200), '52,0 %'])
+    expect(cells(/MSFT/)[0]).toBe(formatEur(3100))
+    expect(cells(/SAN\.MC/)[0]).toBe(formatEur(1700))
+  })
+
+  it('labels the target "Punto elegido" for a regular frontier point', () => {
+    renderTable()
+
+    const resumen = screen.getByRole('list', { name: 'Comparación con el punto elegido' })
+    expect(within(resumen).getByText('Punto elegido')).toBeInTheDocument()
+    expect(within(resumen).queryByText('Mínima varianza')).not.toBeInTheDocument()
+  })
+
+  it('labels the target "Mínima varianza" when the minimum-variance point is selected', () => {
+    renderTable(frontera.cartera_minima_varianza, true)
+
+    const resumen = screen.getByRole('list', { name: 'Comparación con el punto elegido' })
+    const minima = within(resumen).getByText('Mínima varianza').closest('li')!
+    expect(minima).toHaveTextContent('+1,82 %')
+    expect(minima).toHaveTextContent('4,36 %')
+    expect(within(resumen).queryByText('Punto elegido')).not.toBeInTheDocument()
   })
 
   it('marks tiny deltas as "Mantener"', () => {
@@ -82,7 +114,8 @@ describe('MovimientosTable', () => {
     renderTable()
 
     const table = screen.getByRole('table', { name: TITLE })
-    await waitFor(() => expect(within(table).getAllByText('••••• €')).toHaveLength(frontera.tickers.length))
+    await waitFor(() => expect(within(table).getAllByText('••••• €')).toHaveLength(frontera.tickers.length * 2))
+    expect(within(table).queryByText('5.200,00 €')).not.toBeInTheDocument()
     expect(within(table).queryByText('+1.250,00 €')).not.toBeInTheDocument()
     expect(within(table).queryByText('−3.100,00 €')).not.toBeInTheDocument()
     expect(within(table).getByText('+12,5 pp')).toBeInTheDocument()

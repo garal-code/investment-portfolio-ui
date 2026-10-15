@@ -1,8 +1,17 @@
 'use client'
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, ChartScatter, ArrowLeftRight, Settings } from 'lucide-react'
+import {
+  LayoutDashboard,
+  ChartScatter,
+  ArrowLeftRight,
+  Settings,
+  PanelLeftClose,
+  PanelLeftOpen,
+} from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
+import { useSidebarCollapsed } from '@/lib/sidebar-state'
 
 const NAV = [
   { href: '/dashboard', label: 'Resumen', icon: LayoutDashboard },
@@ -20,6 +29,18 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   const pathname = usePathname()
   const { user } = useAuth()
   const displayName = user?.nombre || user?.email || 'Cargando...'
+  const { collapsed, toggle } = useSidebarCollapsed()
+  // Width animates only on a user toggle, never when a reload hydrates the
+  // stored state.
+  const [animarAncho, setAnimarAncho] = useState(false)
+  const initials = displayName
+    .split(/\s+/)
+    .slice(0, 2)
+    .map(word => word.charAt(0).toUpperCase())
+    .join('')
+  // Collapsing only applies from the lg breakpoint, where the sidebar is
+  // static; the mobile drawer always shows the full menu.
+  const hideWhenCollapsed = collapsed ? 'lg:sr-only' : ''
 
   return (
     <>
@@ -33,21 +54,32 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-[200px] min-h-screen flex flex-col shrink-0 transition-transform duration-200 ease-in-out lg:static lg:translate-x-0 ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
+        data-collapsed={collapsed}
+        className={`fixed inset-y-0 left-0 z-50 w-[200px] min-h-screen flex flex-col shrink-0 ${animarAncho ? 'transition-[transform,width]' : 'transition-transform'} duration-200 ease-in-out lg:static lg:translate-x-0 ${
+          collapsed ? 'lg:w-[64px]' : 'lg:w-[200px]'
+        } ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
         style={{ background: 'var(--color-sidebar)' }}
       >
         {/* Logo */}
         <div
-          className="px-5 pt-6 pb-5"
+          className={`px-5 pt-6 pb-5 ${collapsed ? 'lg:px-2' : ''}`}
           style={{ borderBottom: '1px solid rgba(255,255,255,.14)' }}
         >
-          <div className="font-serif text-[19px] font-bold text-white tracking-tight truncate">
-            {displayName}
-          </div>
-          <div className="font-lora italic text-[12px] mt-0.5" style={{ color: 'rgba(255,255,255,.65)' }}>
-            mi cartera
+          {collapsed && (
+            <div
+              className="hidden lg:block font-serif text-[19px] font-bold text-white text-center"
+              title={displayName}
+            >
+              {initials}
+            </div>
+          )}
+          <div className={collapsed ? 'lg:hidden' : ''}>
+            <div className="font-serif text-[19px] font-bold text-white tracking-tight truncate">
+              {displayName}
+            </div>
+            <div className="font-lora italic text-[12px] mt-0.5" style={{ color: 'rgba(255,255,255,.65)' }}>
+              mi cartera
+            </div>
           </div>
         </div>
 
@@ -60,14 +92,17 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
                 key={href}
                 href={href}
                 onClick={onClose}
+                title={collapsed ? label : undefined}
                 className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[13px] transition-colors ${
+                  collapsed ? 'lg:justify-center' : ''
+                } ${
                   active
                     ? 'bg-[var(--color-sidebar-active)] text-white font-medium'
                     : 'text-white/70 font-normal hover:bg-[var(--color-sidebar-hover)] hover:text-white'
                 }`}
               >
-                <Icon size={15} />
-                {label}
+                <Icon size={15} className="shrink-0" />
+                <span className={`truncate ${hideWhenCollapsed}`}>{label}</span>
               </Link>
             )
           })}
@@ -75,15 +110,31 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
 
         {/* Footer */}
         <div
-          className="px-5 py-3.5"
+          className={`px-5 py-3.5 ${collapsed ? 'lg:px-2' : ''}`}
           style={{ borderTop: '1px solid rgba(255,255,255,.12)' }}
         >
           <p
-            className="text-[10px] font-bold tracking-[.12em] uppercase"
+            className={`text-[10px] font-bold tracking-[.12em] uppercase mb-2.5 ${collapsed ? 'lg:hidden' : ''}`}
             style={{ color: 'rgba(255,255,255,.4)' }}
           >
             Garal Cartera v1.0
           </p>
+          <button
+            type="button"
+            onClick={() => {
+              setAnimarAncho(true)
+              toggle()
+            }}
+            aria-expanded={!collapsed}
+            aria-label={collapsed ? 'Expandir menú' : 'Contraer menú'}
+            title={collapsed ? 'Expandir menú' : 'Contraer menú'}
+            className={`hidden lg:flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-[13px] text-white/70 hover:bg-[var(--color-sidebar-hover)] hover:text-white transition-colors ${
+              collapsed ? 'justify-center' : ''
+            }`}
+          >
+            {collapsed ? <PanelLeftOpen size={15} /> : <PanelLeftClose size={15} />}
+            {!collapsed && <span>Contraer</span>}
+          </button>
         </div>
       </aside>
     </>
