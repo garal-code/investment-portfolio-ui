@@ -83,6 +83,27 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
           </div>
         </div>
 
+        {/* Collapse toggle: at the top so it stays reachable on long pages,
+            where the sidebar grows with the content. */}
+        <div className="hidden lg:block px-2.5 pt-3.5">
+          <button
+            type="button"
+            onClick={() => {
+              setAnimarAncho(true)
+              toggle()
+            }}
+            aria-expanded={!collapsed}
+            aria-label={collapsed ? 'Expandir menú' : 'Contraer menú'}
+            title={collapsed ? 'Expandir menú' : 'Contraer menú'}
+            className={`flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-[13px] text-white/70 hover:bg-[var(--color-sidebar-hover)] hover:text-white transition-colors ${
+              collapsed ? 'justify-center' : ''
+            }`}
+          >
+            {collapsed ? <PanelLeftOpen size={15} /> : <PanelLeftClose size={15} />}
+            {!collapsed && <span>Contraer</span>}
+          </button>
+        </div>
+
         {/* Nav */}
         <nav className="flex-1 px-2.5 py-3.5 flex flex-col gap-0.5">
           {NAV.map(({ href, label, icon: Icon }) => {
@@ -114,27 +135,11 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
           style={{ borderTop: '1px solid rgba(255,255,255,.12)' }}
         >
           <p
-            className={`text-[10px] font-bold tracking-[.12em] uppercase mb-2.5 ${collapsed ? 'lg:hidden' : ''}`}
+            className={`text-[10px] font-bold tracking-[.12em] uppercase ${collapsed ? 'lg:hidden' : ''}`}
             style={{ color: 'rgba(255,255,255,.4)' }}
           >
             Garal Cartera v1.0
           </p>
-          <button
-            type="button"
-            onClick={() => {
-              setAnimarAncho(true)
-              toggle()
-            }}
-            aria-expanded={!collapsed}
-            aria-label={collapsed ? 'Expandir menú' : 'Contraer menú'}
-            title={collapsed ? 'Expandir menú' : 'Contraer menú'}
-            className={`hidden lg:flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-[13px] text-white/70 hover:bg-[var(--color-sidebar-hover)] hover:text-white transition-colors ${
-              collapsed ? 'justify-center' : ''
-            }`}
-          >
-            {collapsed ? <PanelLeftOpen size={15} /> : <PanelLeftClose size={15} />}
-            {!collapsed && <span>Contraer</span>}
-          </button>
         </div>
       </aside>
     </>
