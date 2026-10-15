@@ -15,7 +15,7 @@ import { useSidebarCollapsed } from '@/lib/sidebar-state'
 
 const NAV = [
   { href: '/dashboard', label: 'Resumen', icon: LayoutDashboard },
-  { href: '/analisis', label: 'Análisis', icon: ChartScatter },
+  { href: '/markowitz', label: 'Markowitz', icon: ChartScatter },
   { href: '/movimientos', label: 'Movimientos', icon: ArrowLeftRight },
   { href: '/ajustes', label: 'Ajustes', icon: Settings },
 ]
