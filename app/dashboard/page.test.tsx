@@ -110,6 +110,42 @@ describe('DashboardPage — composition and data wiring', () => {
     expect(screen.getByTestId('position-row-BBB0000000B0')).toBeInTheDocument()
   })
 
+  it('renders a position without FX rate at cost, like a missing price, with no NaN', () => {
+    const sinFx = posicion({
+      instrumento: { id: 4, isin: 'US0378331005', ticker: 'AAPL', nombre: 'Apple', tipo: 'Acción', sector: 'Tecnología', pais: 'EE. UU.', moneda: 'USD' },
+      coste_total: 500,
+      precio_actual: 200,
+      precio_actual_nativo: 200,
+      valor_actual_nativo: 2000,
+      moneda_nativa: 'USD',
+      valor_actual: null,
+      valor_actual_eur: null,
+      precio_actual_eur: null,
+      plusvalia_latente: null,
+      rentabilidad_pct: null,
+      plusvalia_total: null,
+      fx_actual: null,
+    })
+    // garal-screener values it at cost in the portfolio totals
+    useResumenMock.mockReturnValue({
+      data: { ...resumen([posA, sinFx]), valor_total: 1100, coste_total: 1100 },
+      isLoading: false,
+      isError: false,
+    })
+    const { container } = render(<DashboardPage />)
+
+    expect(container.textContent).not.toMatch(/NaN/)
+    expect(screen.getAllByTestId('treemap-tile')).toHaveLength(2)
+    const row = screen.getByTestId('position-row-US0378331005')
+    expect(row).toHaveTextContent('200,00 US$')
+    expect(row).toHaveTextContent('500,00 €')
+    expect(row).toHaveTextContent('+0,00 %')
+    expect(row).not.toHaveTextContent('200,00 €')
+
+    fireEvent.click(row.querySelector('button')!)
+    expect(row).toHaveTextContent('sin tipo de cambio')
+  })
+
   it('renders consistent empty states when there are zero positions', () => {
     useResumenMock.mockReturnValue({ data: resumen([]), isLoading: false, isError: false })
     render(<DashboardPage />)

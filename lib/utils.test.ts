@@ -1,5 +1,11 @@
+import { AxiosError, AxiosHeaders, type AxiosResponse } from 'axios'
 import { describe, expect, it } from 'vitest'
-import { formatEur, formatCurrency, formatPct, formatPeso, maskAmount, TREEMAP_COLORS, treemapColor } from './utils'
+import {
+  formatEur, formatCurrency, formatPct, formatPeso, formatRatioPct, formatNum, formatMes, maskAmount,
+  formatPp, formatEurSigned,
+  TREEMAP_COLORS, treemapColor,
+  getErrorStatus, getFronteraErrorMessage,
+} from './utils'
 
 describe('formatEur — es-ES currency formatting', () => {
   it('formats a positive amount with thousands grouping and comma decimals', () => {
@@ -50,6 +56,68 @@ describe('formatPeso — 1-decimal weight percentage', () => {
   it('returns an em dash placeholder for null/undefined', () => {
     expect(formatPeso(null)).toBe('—')
     expect(formatPeso(undefined)).toBe('—')
+  })
+})
+
+describe('formatRatioPct — unsigned fraction as a 2-decimal percentage', () => {
+  it('converts a 0-1 fraction into a 2-decimal es-ES percentage without sign', () => {
+    expect(formatRatioPct(0.043625)).toBe('4,36 %')
+  })
+
+  it('accepts a custom number of decimals', () => {
+    expect(formatRatioPct(0.043625, 3)).toBe('4,363 %')
+  })
+
+  it('uses U+2212 for negative fractions', () => {
+    expect(formatRatioPct(-0.012)).toBe('−1,20 %')
+  })
+
+  it('returns an em dash placeholder for null/undefined', () => {
+    expect(formatRatioPct(null)).toBe('—')
+    expect(formatRatioPct(undefined)).toBe('—')
+  })
+})
+
+describe('formatPp — signed weight delta in percentage points', () => {
+  it('converts a 0-1 fraction delta into signed 1-decimal points', () => {
+    expect(formatPp(0.1)).toBe('+10,0 pp')
+    expect(formatPp(-0.0525)).toBe('−5,3 pp')
+  })
+
+  it('renders zero, or a delta that rounds to zero, without sign', () => {
+    expect(formatPp(0)).toBe('0,0 pp')
+    expect(formatPp(-0.0004)).toBe('0,0 pp')
+  })
+})
+
+describe('formatEurSigned — EUR amount with explicit sign', () => {
+  it('prefixes positive amounts with "+" and keeps U+2212 for negatives', () => {
+    expect(formatEurSigned(1250)).toBe('+1.250,00 €')
+    expect(formatEurSigned(-3100)).toBe('−3.100,00 €')
+  })
+
+  it('renders an amount that rounds to zero without sign', () => {
+    expect(formatEurSigned(0.001)).toBe('0,00 €')
+    expect(formatEurSigned(-0.001)).toBe('0,00 €')
+  })
+})
+
+describe('formatNum — plain es-ES number', () => {
+  it('formats with the requested fixed decimals, never scientific notation', () => {
+    expect(formatNum(0.00084885, 6)).toBe('0,000849')
+    expect(formatNum(1, 2)).toBe('1,00')
+  })
+
+  it('uses U+2212 for negatives and drops the sign when rounding to zero', () => {
+    expect(formatNum(-0.2287, 2)).toBe('−0,23')
+    expect(formatNum(-0.001, 2)).toBe('0,00')
+  })
+})
+
+describe('formatMes — short month and year', () => {
+  it('renders a YYYY-MM-DD date as an es-ES month label', () => {
+    expect(formatMes('2024-01-01')).toBe('ene 2024')
+    expect(formatMes('2026-12-31')).toBe('dic 2026')
   })
 })
 
@@ -105,5 +173,47 @@ describe('sign after rounding', () => {
 
   it('formatEur keeps the minus for non-zero rounded values', () => {
     expect(formatEur(-0.01)).toMatch(/^−0,01\s€$/)
+  })
+})
+
+function axiosError(status: number, data: unknown): AxiosError {
+  const response = {
+    status, data, statusText: '', headers: {}, config: { headers: new AxiosHeaders() },
+  } as AxiosResponse
+  return new AxiosError(`Request failed with status code ${status}`, 'ERR_BAD_RESPONSE', undefined, undefined, response)
+}
+
+describe('getErrorStatus', () => {
+  it('returns the HTTP status of an axios error', () => {
+    expect(getErrorStatus(axiosError(503, {}))).toBe(503)
+  })
+
+  it('returns undefined for errors without a response', () => {
+    expect(getErrorStatus(new Error('Network Error'))).toBeUndefined()
+    expect(getErrorStatus(null)).toBeUndefined()
+  })
+})
+
+describe('getFronteraErrorMessage — user-facing frontier error copy', () => {
+  it('shows the backend detail for insufficient-data errors (400)', () => {
+    const detail = 'No hay suficientes datos: se necesitan al menos 2 activos con histórico'
+    expect(getFronteraErrorMessage(axiosError(400, { detail }))).toBe(detail)
+  })
+
+  it('shows a provider-unavailable message for 503, regardless of detail', () => {
+    expect(getFronteraErrorMessage(axiosError(503, { detail: 'yfinance timeout' }))).toBe(
+      'El proveedor de precios no está disponible. Prueba de nuevo en unos minutos.',
+    )
+  })
+
+  it('falls back to a generic message for unknown errors', () => {
+    const generic = 'No se pudo calcular la frontera eficiente.'
+    expect(getFronteraErrorMessage(new Error('Network Error'))).toBe(generic)
+    expect(getFronteraErrorMessage(axiosError(500, 'Internal Server Error'))).toBe(generic)
+  })
+
+  it('ignores non-string details (e.g. 422 validation arrays)', () => {
+    const error = axiosError(422, { detail: [{ loc: ['query', 'anios'], msg: 'too large' }] })
+    expect(getFronteraErrorMessage(error)).toBe('No se pudo calcular la frontera eficiente.')
   })
 })

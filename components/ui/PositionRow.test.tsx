@@ -18,6 +18,7 @@ function vm(overrides: Partial<PositionViewModel> = {}): PositionViewModel {
     cantidad: 14,
     precioMedio: 285,
     precioActualEur: 402.5,
+    sinTipoCambio: false,
     valorEur: 5635,
     costeTotal: 3990,
     plusvalia: 1645,
@@ -88,6 +89,32 @@ describe('PositionRow — dual currency', () => {
     // under the EUR primary price, so it legitimately appears twice.
     expect(screen.getAllByText('436,20 US$')).toHaveLength(2)
     expect(screen.getByText('402,50 €')).toBeInTheDocument()
+  })
+})
+
+describe('PositionRow — unknown EUR price', () => {
+  it('shows the native price with a "sin tipo de cambio" hint and no EUR price when the FX rate is missing', () => {
+    const { container } = renderRow(
+      {
+        moneda: 'USD', precioActualEur: undefined, precioActualNativo: 200, sinTipoCambio: true,
+        valorEur: 1500, costeTotal: 1500, plusvalia: 0, rentabilidadPct: 0,
+      },
+      { open: true },
+    )
+    expect(container.textContent).not.toMatch(/NaN/)
+    expect(screen.getByText('200,00 US$')).toBeInTheDocument()
+    expect(screen.queryByText('200,00 €')).not.toBeInTheDocument()
+    const precio = screen.getByText('Precio actual').parentElement!
+    expect(precio).toHaveTextContent('—')
+    expect(precio).toHaveTextContent('200,00 US$ · sin tipo de cambio')
+  })
+
+  it('shows "—" instead of 0 € when there is no price at all', () => {
+    const { container } = renderRow({ precioActualEur: undefined }, { open: true })
+    expect(container.textContent).not.toMatch(/NaN/)
+    expect(screen.queryByText('0,00 €')).not.toBeInTheDocument()
+    expect(screen.getAllByText('—').length).toBeGreaterThanOrEqual(2)
+    expect(screen.queryByText(/sin tipo de cambio/)).not.toBeInTheDocument()
   })
 })
 

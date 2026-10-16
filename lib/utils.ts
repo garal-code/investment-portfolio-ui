@@ -59,6 +59,36 @@ export function formatPeso(value?: number | null): string {
   return `${pct} %`
 }
 
+// Unsigned 0-1 fraction (e.g. a monthly volatility) as an es-ES percentage;
+// 2 decimals by default because monthly risk figures differ by hundredths.
+export function formatRatioPct(value?: number | null, decimals = 2): string {
+  if (value == null) return '—'
+  const pct = new Intl.NumberFormat('es-ES', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(value * 100)
+  return `${withUnicodeMinus(pct)} %`
+}
+
+// Signed delta of two 0-1 weights in percentage points, 1 decimal
+// (e.g. +10,0 pp). A delta that rounds to zero carries no sign.
+export function formatPp(value?: number | null): string {
+  if (value == null) return '—'
+  const magnitude = new Intl.NumberFormat('es-ES', {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  }).format(Math.abs(value * 100))
+  if (!/[1-9]/.test(magnitude)) return `${magnitude} pp`
+  return `${value < 0 ? '−' : '+'}${magnitude} pp`
+}
+
+// EUR amount with an explicit "+" for positives (negatives keep U+2212);
+// an amount that rounds to zero carries no sign.
+export function formatEurSigned(value?: number | null): string {
+  const formatted = formatEur(value)
+  return value != null && value > 0 && /[1-9]/.test(formatted) ? `+${formatted}` : formatted
+}
+
 // Privacy mode placeholder: never derived from the real amount (always
 // formats 0), so it cannot leak magnitude or sign. Extracts just the
 // currency symbol/suffix by stripping digits/separators from the 0-amount
@@ -71,10 +101,12 @@ export function maskAmount(currency = 'EUR'): string {
 
 export function formatNum(value?: number | null, decimals = 2): string {
   if (value == null) return '—'
-  return new Intl.NumberFormat('es-ES', {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
-  }).format(value)
+  return withUnicodeMinus(
+    new Intl.NumberFormat('es-ES', {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    }).format(value),
+  )
 }
 
 // ── Colores semánticos (paleta Garal) ─────────────────────────────────────────
@@ -90,21 +122,6 @@ export function signRent(value?: number | null): string {
   if (value == null || value === 0) return ''
   return value > 0 ? '+' : ''
 }
-
-// ── Colores para gráficos (orden Garal) ───────────────────────────────────────
-
-export const CHART_COLORS = [
-  '#2D6A5A', // primary green
-  '#c4956a', // amber
-  '#8a3a6a', // plum
-  '#4a7a5a', // moss
-  '#6a5a4a', // umber
-  '#a09080', // taupe
-  '#5aaa8a', // green light
-  '#e8c890', // amber light
-  '#c47aab', // plum light
-  '#7a6a5a', // umber mid
-]
 
 // ── Paleta del treemap de composición (orden por peso descendente) ───────────
 // bg/text pairs per the design handoff README — 9 entries, wraps around from
@@ -136,6 +153,13 @@ export function formatFecha(fecha: string): string {
   })
 }
 
+// Month label for monthly series, e.g. "ene 2024". Same manual parsing as
+// formatFecha so a first-of-month date never shifts to the previous month.
+export function formatMes(fecha: string): string {
+  const [y, m, d] = fecha.split('-').map(Number)
+  return new Date(y, m - 1, d).toLocaleDateString('es-ES', { month: 'short', year: 'numeric' })
+}
+
 export function hoy(): string {
   return new Date().toISOString().split('T')[0]
 }
@@ -149,4 +173,21 @@ export function getErrorMessage(error: unknown, fallback: string): string {
     'response' in error &&
     (error as { response?: { data?: { detail?: string } } }).response?.data?.detail
   return detail || fallback
+}
+
+export function getErrorStatus(error: unknown): number | undefined {
+  if (error == null || typeof error !== 'object' || !('response' in error)) return undefined
+  return (error as { response?: { status?: number } }).response?.status
+}
+
+// 400 carries a Spanish `detail` (insufficient data) worth showing as is; 503
+// means the price provider is down, whatever its detail says. Non-string
+// details (e.g. 422 validation arrays) fall back to the generic message.
+export function getFronteraErrorMessage(error: unknown): string {
+  if (getErrorStatus(error) === 503) {
+    return 'El proveedor de precios no está disponible. Prueba de nuevo en unos minutos.'
+  }
+  const detail = (error as { response?: { data?: { detail?: unknown } } } | null)?.response?.data?.detail
+  if (typeof detail === 'string' && detail) return detail
+  return 'No se pudo calcular la frontera eficiente.'
 }
