@@ -43,7 +43,7 @@ function useTreemapHeight(): number {
 
 export default function DashboardPage() {
   const { carteraId, isLoading: carteraLoading } = useActiveCartera()
-  const [periodo, setPeriodo] = useState<PeriodoSeleccionado>('total')
+  const [periodo, setPeriodo] = useState<PeriodoSeleccionado>('ytd')
   const esTotal = periodo === 'total'
   const { data: resumen, isLoading, isError } = useResumen(carteraId)
   const { data: rentabilidad } = useRentabilidad(carteraId, esTotal ? null : periodo)

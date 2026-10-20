@@ -155,6 +155,27 @@ describe('DashboardPage — composition and data wiring', () => {
   })
 })
 
+describe('DashboardPage — default period', () => {
+  it('selects YTD on entry and fetches its rentabilidad', () => {
+    useResumenMock.mockReturnValue({ data: resumen([posA, posB]), isLoading: false, isError: false })
+    render(<DashboardPage />)
+
+    expect(screen.getByRole('tab', { name: 'YTD' })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('tab', { name: 'Total' })).toHaveAttribute('aria-selected', 'false')
+    expect(useRentabilidadMock).toHaveBeenCalledWith(1, 'ytd')
+  })
+
+  it('still lets the user switch to Total, which needs no period fetch', () => {
+    useResumenMock.mockReturnValue({ data: resumen([posA, posB]), isLoading: false, isError: false })
+    render(<DashboardPage />)
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Total' }))
+
+    expect(screen.getByRole('tab', { name: 'Total' })).toHaveAttribute('aria-selected', 'true')
+    expect(useRentabilidadMock).toHaveBeenLastCalledWith(1, null)
+  })
+})
+
 describe('DashboardPage — hover cross-highlight', () => {
   beforeEach(() => {
     useResumenMock.mockReturnValue({ data: resumen([posA, posB]), isLoading: false, isError: false })
