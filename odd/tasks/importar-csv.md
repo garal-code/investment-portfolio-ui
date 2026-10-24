@@ -51,3 +51,6 @@ File locator: `odd/tasks/importar-csv.md` · Engram mirror: `odd/importar-csv-ui
 - **L7** (2026-10-24, user): "lo que aparezcan los movimiento abajo en la presvisualizacion no me convence, puede llevar
   a confusion" → the stored movements table (and its loading/empty/error states) is hidden while the import panel is
   open; it comes back on close, already refreshed. RED 2 / GREEN; 342 tests pass.
+- **L8** (2026-10-24, user): "el box selector de las plantillas es mas pequeño que el de introducir el fichero no queda
+  bien" → measured 36px (native select) vs 37.5px (file input). `components/importacion/Campo.tsx`: every field in the
+  import panel is 38px and selects use the app look with a chevron (global `.input-dark` untouched). Playwright: 38 / 38.
