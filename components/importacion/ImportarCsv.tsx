@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { PlantillaEditor } from './PlantillaEditor'
 import { PrevisualizacionTabla } from './PrevisualizacionTabla'
 import {
@@ -62,6 +62,16 @@ export function ImportarCsv({ carteraId, onClose }: ImportarCsvProps) {
   const [resultado, setResultado] = useState<ResultadoImportacion | null>(null)
   const [error, setError] = useState('')
   const [obsoleta, setObsoleta] = useState(false)
+
+  const panelRef = useRef<HTMLDivElement>(null)
+
+  // The review needs the whole screen: bring the panel to the top so the
+  // preview table can fill the viewport
+  useEffect(() => {
+    if (paso !== 'revision') return
+    const reducido = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    panelRef.current?.scrollIntoView?.({ behavior: reducido ? 'auto' : 'smooth', block: 'start' })
+  }, [paso])
 
   const { data: plantillas, isLoading: cargandoPlantillas } = usePlantillas()
   const inspeccionar = useInspeccionarCsv()
@@ -187,7 +197,7 @@ export function ImportarCsv({ carteraId, onClose }: ImportarCsvProps) {
   const ocupado = inspeccionar.isPending || previsualizar.isPending || guardar.isPending || confirmar.isPending
 
   return (
-    <div className="card p-5 space-y-5">
+    <div ref={panelRef} className="card p-5 space-y-5 scroll-mt-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <p className="font-serif text-[17px] font-bold" style={{ color: 'var(--color-ink)' }}>Importar desde CSV</p>
         {paso !== 'resultado' && (

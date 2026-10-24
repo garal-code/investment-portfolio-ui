@@ -138,6 +138,23 @@ describe('ImportarCsv — with a saved template', () => {
     expect(screen.getByRole('button', { name: 'Importar 1 movimiento' })).toBeEnabled()
   })
 
+  it('brings the panel to the top so the preview can use the whole screen', async () => {
+    mockBackend()
+    const scrollIntoView = vi.fn()
+    Element.prototype.scrollIntoView = scrollIntoView
+    renderImportar()
+    await elegirArchivo()
+    await waitFor(() => expect(screen.getByLabelText('Plantilla')).toHaveValue('7'))
+    expect(scrollIntoView).not.toHaveBeenCalled()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Previsualizar' }))
+
+    await screen.findByText('Alpha')
+    expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'start' })
+    // jsdom has no scrollIntoView; do not leak the mock into other tests
+    delete (Element.prototype as { scrollIntoView?: unknown }).scrollIntoView
+  })
+
   it('filters the preview to the skipped rows', async () => {
     mockBackend()
     renderImportar()

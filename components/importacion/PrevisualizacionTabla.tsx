@@ -69,7 +69,9 @@ export function PrevisualizacionTabla({ previsualizacion }: { previsualizacion: 
       </div>
 
       <div className="rounded-[10px] border overflow-hidden" style={{ borderColor: 'var(--color-border)' }}>
-        <div className="overflow-auto max-h-[480px]">
+        {/* As tall as the viewport allows, leaving room for the summary and the
+            actions, so the header stays visible while scrolling many rows */}
+        <div className="overflow-auto" style={{ maxHeight: 'max(320px, calc(100dvh - 200px))' }}>
           <table className="w-full text-[12px] border-collapse">
             <thead className="sticky top-0" style={{ background: 'var(--color-surface)' }}>
               <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
