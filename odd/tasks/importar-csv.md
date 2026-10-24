@@ -20,8 +20,8 @@ File locator: `odd/tasks/importar-csv.md` · Engram mirror: `odd/importar-csv-ui
 ## Tasks
 
 - [x] T1 — S1-S5 · Types, API client, hooks, pure template helpers, import panel (file, template, mapping editor,
-  preview, confirm, result) in `/movimientos` + tests · inline · commits `1696af7` (client, hooks, helpers) and
-  the `feat(movimientos)` commit that follows it (panel + page)
+  preview, confirm, result) in `/movimientos` + tests · inline · commits `7ff26f5` (client, hooks, helpers; PR 3)
+  and `69a8b7b` (panel + page; PR 4), with follow-ups `738dec3`, `599f1e8`, `6207723`, `60fc6d4`, `9363efb` (L4-L9)
 - [x] T2 — S1-S5 · Visual check with Playwright against the local backend on `feat/importar-csv` · inline ·
   evidence: L2
 
@@ -54,3 +54,11 @@ File locator: `odd/tasks/importar-csv.md` · Engram mirror: `odd/importar-csv-ui
 - **L8** (2026-10-24, user): "el box selector de las plantillas es mas pequeño que el de introducir el fichero no queda
   bien" → measured 36px (native select) vs 37.5px (file input). `components/importacion/Campo.tsx`: every field in the
   import panel is 38px and selects use the app look with a chevron (global `.input-dark` untouched). Playwright: 38 / 38.
+- **L9** (2026-10-24, user): "benga perfecto genera las ramas y PR necesarias stackeadas". The backend was already
+  delivered by another session as garal-code/garal-screener #40-#44 (`70ea203` there lets a template have only buy or
+  only sell values, closing L5); `9363efb` aligns the editor validation ("Marca al menos un valor de compra o de
+  venta"). Frontend delivered as one stacked chain on `main`, commits cherry-picked from the local `feat/importar-csv`
+  (hashes above are the delivered ones): 1 `fix/precio-moneda-movimientos` (74 lines) → 2 `feat/movimientos-ordenar`
+  (265) → 3 `feat/importar-csv-01-cliente` (586) → 4 `feat/importar-csv-02-panel` (1,555: ≈1,000 code, ≈500 tests,
+  56 docs; no cohesive split, the editor and preview components are tested through the panel). 353 tests pass at the
+  tip.
