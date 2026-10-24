@@ -154,8 +154,10 @@ export function validarBorrador(b: BorradorPlantilla, columnasCsv: string[] | nu
     if (!columnasCsv?.includes(columna)) errores.push(`La columna "${columna}" no existe en este CSV`)
   }
 
-  if (b.valores_compra.length === 0) errores.push('Marca al menos un valor de compra')
-  if (b.valores_venta.length === 0) errores.push('Marca al menos un valor de venta')
+  // One list may be empty (a buys-only or sales-only export), not both
+  if (b.valores_compra.length === 0 && b.valores_venta.length === 0) {
+    errores.push('Marca al menos un valor de compra o de venta')
+  }
   const compra = new Set(b.valores_compra.map(v => v.toLowerCase()))
   const comunes = b.valores_venta.filter(v => compra.has(v.toLowerCase()))
   if (comunes.length > 0) {

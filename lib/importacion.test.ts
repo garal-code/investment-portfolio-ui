@@ -114,9 +114,15 @@ describe('validarBorrador', () => {
       'Elige la columna de Tipo de operación',
       'Elige la columna de Cantidad',
       'Elige la columna de Precio',
-      'Marca al menos un valor de compra',
-      'Marca al menos un valor de venta',
+      'Marca al menos un valor de compra o de venta',
     ])
+  })
+
+  it.each([
+    ['only buys', { valores_compra: ['Market buy'], valores_venta: [] }],
+    ['only sells', { valores_compra: [], valores_venta: ['Market sell'] }],
+  ])('accepts a template with %s, as the backend does', (_, valores) => {
+    expect(validarBorrador({ ...borradorCompleto(), ...valores }, inspeccion.columnas)).toEqual([])
   })
 
   it('rejects a mapped column that is not in this CSV', () => {

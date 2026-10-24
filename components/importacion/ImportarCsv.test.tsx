@@ -376,7 +376,7 @@ describe('ImportarCsv — new template', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Guardar plantilla y previsualizar' }))
 
     expect(screen.getByText('Ponle un nombre a la plantilla')).toBeInTheDocument()
-    expect(screen.getByText('Marca al menos un valor de venta')).toBeInTheDocument()
+    expect(screen.getByText('Marca al menos un valor de compra o de venta')).toBeInTheDocument()
     expect(peticiones.crearPlantilla).toEqual([])
   })
 
