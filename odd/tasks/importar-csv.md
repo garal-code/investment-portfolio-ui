@@ -37,3 +37,9 @@ File locator: `odd/tasks/importar-csv.md` · Engram mirror: `odd/importar-csv-ui
   and disabled the button.
 - **L3** (slices): commit 1 = 586 lines (client, hooks, helpers + tests); commit 2 = panel, page and tests. Over the
   ~400-line guide because each slice is one indivisible layer with its tests.
+- **L4** (2026-10-24, user): "en la presvisualizcion de los movimientos haz que la ventana ocupe todo ahora mismo se me
+  queda a medias que ocupe todo el espacio que tenga" → `d3c4f8a`: preview table up to the viewport height
+  (`max(320px, 100dvh - 200px)`, sticky header) and the panel scrolls to the top on the review step. RED/GREEN on the
+  scroll test; 337 tests pass. Playwright 1440x900, 41-row CSV: table 700px, actions visible without scrolling.
+- **L5** (finding, open): the backend requires at least one sell value (`valores_venta` min 1), and the classifier only
+  lists values present in the file, so a CSV with only buys cannot be saved as a template. Decision pending.
