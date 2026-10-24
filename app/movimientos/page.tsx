@@ -40,6 +40,9 @@ function MovimientosPageContent() {
   // One panel at a time: the manual form or the CSV import
   const [panel, setPanel] = useState<'nuevo' | 'importar' | null>(null)
   const showForm = panel === 'nuevo'
+  // While importing, the preview is the only table: the stored movements would
+  // read as part of it
+  const showTabla = panel !== 'importar'
   const { carteraId, isLoading: carteraLoading } = useActiveCartera()
   const { data: movs, isLoading, isError } = useMovimientos(carteraId)
   const { mutate: eliminar } = useEliminarMovimiento(carteraId)
@@ -111,9 +114,9 @@ function MovimientosPageContent() {
         )}
 
         {/* Tabla */}
-        {isLoading && <Loading text="Cargando movimientos..." />}
+        {showTabla && isLoading && <Loading text="Cargando movimientos..." />}
 
-        {movsFiltrados && movsFiltrados.length > 0 && (
+        {showTabla && movsFiltrados && movsFiltrados.length > 0 && (
           <div className="card overflow-hidden">
             <div className="overflow-x-auto">
             <table className="w-full text-[12px] border-collapse">
@@ -208,13 +211,13 @@ function MovimientosPageContent() {
           </div>
         )}
 
-        {isError && (
+        {showTabla && isError && (
           <EmptyState text="Error al cargar los movimientos. Verificá la conexión con el backend." />
         )}
-        {!isLoading && !isError && movs?.length === 0 && (
+        {showTabla && !isLoading && !isError && movs?.length === 0 && (
           <EmptyState text="No hay movimientos aún. Añade tu primera operación." />
         )}
-        {!isLoading && !isError && movs && movs.length > 0 && movsFiltrados?.length === 0 && (
+        {showTabla && !isLoading && !isError && movs && movs.length > 0 && movsFiltrados?.length === 0 && (
           <EmptyState text={`No hay movimientos para ${isinFiltro}.`} />
         )}
         </>

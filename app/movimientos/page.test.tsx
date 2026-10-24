@@ -1,6 +1,9 @@
 import { fireEvent, render, screen } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import MovimientosPage from './page'
+import type { Movimiento } from '@/types'
+
+const movimientosMock: { data: Movimiento[] } = { data: [] }
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn() }),
@@ -10,7 +13,7 @@ vi.mock('@/contexts/CarteraContext', () => ({
   useActiveCartera: () => ({ carteraId: 4, isLoading: false }),
 }))
 vi.mock('@/hooks/useCartera', () => ({
-  useMovimientos: () => ({ data: [], isLoading: false, isError: false }),
+  useMovimientos: () => ({ data: movimientosMock.data, isLoading: false, isError: false }),
   useEliminarMovimiento: () => ({ mutate: vi.fn() }),
 }))
 vi.mock('@/components/layout/AppShell', () => ({
@@ -28,6 +31,8 @@ vi.mock('@/components/importacion/ImportarCsv', () => ({
 }))
 
 describe('MovimientosPage — CSV import', () => {
+  afterEach(() => { movimientosMock.data = [] })
+
   it('opens the import panel for the active portfolio from the movements section', () => {
     render(<MovimientosPage />)
 
@@ -65,5 +70,29 @@ describe('MovimientosPage — CSV import', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
     expect(screen.queryByText('movement form')).not.toBeInTheDocument()
+  })
+
+  it('hides the stored movements while importing so they are not mixed up with the preview', () => {
+    movimientosMock.data = [{
+      id: 1, cartera_id: 4, tipo: 'compra', fecha: '2025-03-03', cantidad: 2, precio: 48.1, comision: 0,
+      created_at: '2025-03-03T00:00:00Z', instrumento: { id: 1, isin: 'ES0148396007', nombre: 'Inditex' },
+    }]
+    render(<MovimientosPage />)
+    expect(screen.getByText('Inditex')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Importar CSV' }))
+    expect(screen.queryByText('Inditex')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'close import' }))
+    expect(screen.getByText('Inditex')).toBeInTheDocument()
+  })
+
+  it('hides the empty-movements message while importing', () => {
+    render(<MovimientosPage />)
+    expect(screen.getByText('No hay movimientos aún. Añade tu primera operación.')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Importar CSV' }))
+
+    expect(screen.queryByText('No hay movimientos aún. Añade tu primera operación.')).not.toBeInTheDocument()
   })
 })

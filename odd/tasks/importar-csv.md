@@ -48,3 +48,6 @@ File locator: `odd/tasks/importar-csv.md` · Engram mirror: `odd/importar-csv-ui
   plantilla" opens the editor in text mode (columns with the template's own as suggestions, comma-separated type values
   and commission columns) and saves without previewing; with a file nothing changes. RED 3 / GREEN; 340 tests pass.
   Playwright (agent test user): renamed a template without a file, mapping kept, notice shown; temp template deleted.
+- **L7** (2026-10-24, user): "lo que aparezcan los movimiento abajo en la presvisualizacion no me convence, puede llevar
+  a confusion" → the stored movements table (and its loading/empty/error states) is hidden while the import panel is
+  open; it comes back on close, already refreshed. RED 2 / GREEN; 342 tests pass.
