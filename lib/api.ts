@@ -6,6 +6,8 @@ import type {
   RentabilidadCartera, PeriodoRentabilidad, FronteraEficiente,
   Instrumento, InstrumentoUpdate,
   User, LoginPayload, RegisterPayload, ResetPasswordPayload,
+  DelimitadorCsv, InspeccionCsv, PlantillaImportacion, PlantillaImportacionIn,
+  PrevisualizacionImportacion, ResultadoImportacion,
 } from '@/types'
 
 // Relative baseURL: the browser calls same-origin `/api/v1/*`, and
@@ -137,6 +139,43 @@ export const instrumentos = {
 
   actualizar: (id: number, data: InstrumentoUpdate) =>
     api.patch<Instrumento>(`/instrumentos/${id}`, data).then(r => r.data),
+}
+
+// ── Importación CSV ───────────────────────────────────────────────────────────
+// The CSV travels as text in `contenido` (no multipart upload).
+
+export const importacion = {
+  listarPlantillas: () =>
+    api.get<PlantillaImportacion[]>('/plantillas-importacion').then(r => r.data),
+
+  crearPlantilla: (data: PlantillaImportacionIn) =>
+    api.post<PlantillaImportacion>('/plantillas-importacion', data).then(r => r.data),
+
+  actualizarPlantilla: (id: number, data: PlantillaImportacionIn) =>
+    api.put<PlantillaImportacion>(`/plantillas-importacion/${id}`, data).then(r => r.data),
+
+  eliminarPlantilla: (id: number) =>
+    api.delete(`/plantillas-importacion/${id}`).then(r => r.data),
+
+  inspeccionar: (contenido: string, delimitador: DelimitadorCsv | null = null) =>
+    api.post<InspeccionCsv>('/importaciones/inspeccionar', { contenido, delimitador }).then(r => r.data),
+
+  previsualizar: (carteraId: number, contenido: string, plantillaId: number) =>
+    api
+      .post<PrevisualizacionImportacion>(`/carteras/${carteraId}/importaciones/previsualizar`, {
+        contenido,
+        plantilla_id: plantillaId,
+      })
+      .then(r => r.data),
+
+  confirmar: (carteraId: number, contenido: string, plantillaId: number, huella: string) =>
+    api
+      .post<ResultadoImportacion>(`/carteras/${carteraId}/importaciones`, {
+        contenido,
+        plantilla_id: plantillaId,
+        huella,
+      })
+      .then(r => r.data),
 }
 
 export default api

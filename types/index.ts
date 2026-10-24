@@ -213,3 +213,85 @@ export interface InstrumentoUpdate {
   moneda?: string
   exchange?: string
 }
+
+// ── Importación CSV ───────────────────────────────────────────────────────────
+// Contract: garal-screener docs/importacion.md
+
+export type DelimitadorCsv = ',' | ';' | '\t' | '|'
+export type SeparadorDecimal = '.' | ','
+
+export interface ColumnasImportacion {
+  fecha: string
+  isin: string
+  tipo: string
+  cantidad: string
+  precio: string
+  // Commission = sum of these columns
+  comision: string[]
+  tipo_cambio: string | null
+  // Currency of the price column; EUR rows get tipo_cambio 1.0
+  moneda_precio: string | null
+  // Broker transaction ID used to skip rows already imported
+  referencia: string | null
+}
+
+export interface PlantillaConfig {
+  // null = detect it from the file
+  delimitador: DelimitadorCsv | null
+  separador_decimal: SeparadorDecimal
+  // null = ISO date or datetime; else a strptime format such as %d/%m/%Y
+  formato_fecha: string | null
+  columnas: ColumnasImportacion
+  valores_compra: string[]
+  valores_venta: string[]
+  invertir_tipo_cambio: boolean
+}
+
+export interface PlantillaImportacion {
+  id: number
+  nombre: string
+  config: PlantillaConfig
+  created_at: string
+  updated_at: string
+}
+
+export interface PlantillaImportacionIn {
+  nombre: string
+  config: PlantillaConfig
+}
+
+export interface InspeccionCsv {
+  delimitador: DelimitadorCsv
+  columnas: string[]
+  // Up to 5 rows, values in the order of `columnas`
+  filas_muestra: string[][]
+  // Only columns with 1-20 distinct non-empty values
+  valores_distintos: Record<string, string[]>
+}
+
+export interface FilaImportacion {
+  linea: number
+  estado: 'importar' | 'omitir'
+  motivo: string | null
+  // Rows skipped while reading have every data field null
+  tipo: 'compra' | 'venta' | null
+  fecha: string | null
+  isin: string | null
+  nombre: string | null
+  cantidad: number | null
+  precio: number | null
+  comision: number | null
+  tipo_cambio: number | null
+  referencia: string | null
+}
+
+export interface PrevisualizacionImportacion {
+  huella: string
+  resumen: { total: number; importar: number; omitir: number }
+  filas: FilaImportacion[]
+}
+
+export interface ResultadoImportacion {
+  importados: number
+  omitidos: number
+}
