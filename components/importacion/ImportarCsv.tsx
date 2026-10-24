@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
+import { CAMPO, Selector } from './Campo'
 import { PlantillaEditor } from './PlantillaEditor'
 import { PrevisualizacionTabla } from './PrevisualizacionTabla'
 import {
@@ -256,7 +257,7 @@ export function ImportarCsv({ carteraId, onClose }: ImportarCsvProps) {
                 id="importar-archivo"
                 type="file"
                 accept=".csv,text/csv"
-                className="input-dark text-[13px] file:mr-3 file:border-0 file:bg-transparent file:p-0 file:font-medium file:text-primary file:cursor-pointer"
+                className={`${CAMPO} text-[13px] file:mr-3 file:border-0 file:bg-transparent file:p-0 file:font-medium file:text-primary file:cursor-pointer`}
                 onChange={e => leerArchivo(e.target.files?.[0])}
               />
               {archivo && (
@@ -267,16 +268,15 @@ export function ImportarCsv({ carteraId, onClose }: ImportarCsvProps) {
             </div>
             <div>
               <label className="section-label" htmlFor="importar-plantilla">Plantilla</label>
-              <select
+              <Selector
                 id="importar-plantilla"
-                className="input-dark"
                 value={seleccion}
                 disabled={cargandoPlantillas}
                 onChange={e => setSeleccion(e.target.value)}
               >
                 {plantillas?.map(p => <option key={p.id} value={String(p.id)}>{p.nombre}</option>)}
                 <option value={NUEVA}>Nueva plantilla…</option>
-              </select>
+              </Selector>
               {plantillaElegida && (
                 <div className="mt-1.5 flex gap-4 text-[12px]">
                   <button

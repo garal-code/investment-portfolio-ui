@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { SegmentedControl } from '@/components/ui/SegmentedControl'
+import { CAMPO, Selector } from './Campo'
 import {
   COLUMNAS_OBLIGATORIAS,
   COLUMNAS_OPCIONALES,
@@ -69,7 +70,7 @@ function ValoresTexto({ label, valores, onChange, placeholder = 'Market buy, Lim
       <label className="section-label" htmlFor={`valores-${label}`}>{label}</label>
       <input
         id={`valores-${label}`}
-        className="input-dark"
+        className={CAMPO}
         placeholder={placeholder}
         value={texto}
         onChange={e => {
@@ -96,7 +97,7 @@ function CampoColumna({ id, etiqueta, valor, vacio, columnasCsv, onChange }: {
       <input
         id={id}
         aria-label={`Columna de ${etiqueta}`}
-        className="input-dark"
+        className={CAMPO}
         list={LISTA_COLUMNAS}
         placeholder={vacio}
         value={valor}
@@ -105,16 +106,15 @@ function CampoColumna({ id, etiqueta, valor, vacio, columnasCsv, onChange }: {
     )
   }
   return (
-    <select
+    <Selector
       id={id}
       aria-label={`Columna de ${etiqueta}`}
-      className="input-dark"
       value={valor}
       onChange={e => onChange(e.target.value)}
     >
       <option value="">{vacio}</option>
       {columnasCsv.map(c => <option key={c} value={c}>{c}</option>)}
-    </select>
+    </Selector>
   )
 }
 
@@ -152,7 +152,7 @@ export function PlantillaEditor({ inspeccion, borrador, onChange, onDelimitadorC
         <label className="section-label" htmlFor="plantilla-nombre">Nombre de la plantilla</label>
         <input
           id="plantilla-nombre"
-          className="input-dark"
+          className={CAMPO}
           placeholder="Ej.: mi broker"
           maxLength={100}
           value={borrador.nombre}
@@ -164,14 +164,13 @@ export function PlantillaEditor({ inspeccion, borrador, onChange, onDelimitadorC
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div>
           <label className="section-label" htmlFor="plantilla-delimitador">Separador de columnas</label>
-          <select
+          <Selector
             id="plantilla-delimitador"
-            className="input-dark"
             value={borrador.delimitador ?? ''}
             onChange={e => onDelimitadorChange((e.target.value || null) as DelimitadorCsv | null)}
           >
             {DELIMITADORES.map(d => <option key={d.label} value={d.value}>{d.label}</option>)}
-          </select>
+          </Selector>
         </div>
         <div>
           <span className="section-label">Separador decimal</span>
@@ -186,7 +185,7 @@ export function PlantillaEditor({ inspeccion, borrador, onChange, onDelimitadorC
           <label className="section-label" htmlFor="plantilla-fecha">Formato de fecha</label>
           <input
             id="plantilla-fecha"
-            className="input-dark font-mono"
+            className={`${CAMPO} font-mono`}
             placeholder="Vacío = 2025-02-04"
             value={borrador.formato_fecha}
             onChange={e => onChange({ ...borrador, formato_fecha: e.target.value })}
