@@ -127,6 +127,12 @@ describe('validarBorrador', () => {
     ])
   })
 
+  it('skips the column check when there is no file to compare with', () => {
+    const b = borradorCompleto()
+    b.columnas.comision = ['Old fee']
+    expect(validarBorrador(b, null)).toEqual([])
+  })
+
   it('rejects a value marked as both buy and sell, ignoring case', () => {
     const b = { ...borradorCompleto(), valores_venta: ['market BUY'] }
     expect(validarBorrador(b, inspeccion.columnas)).toEqual([

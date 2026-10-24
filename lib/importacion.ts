@@ -129,9 +129,20 @@ export function configDesdeBorrador(b: BorradorPlantilla): PlantillaImportacionI
   }
 }
 
+// Every CSV header the draft maps, without duplicates
+export function columnasDeBorrador(b: BorradorPlantilla): string[] {
+  const mapeadas = [
+    ...COLUMNAS_OBLIGATORIAS.map(c => b.columnas[c.campo]),
+    ...b.columnas.comision,
+    ...COLUMNAS_OPCIONALES.map(c => b.columnas[c.campo]),
+  ].filter(c => c !== '')
+  return [...new Set(mapeadas)]
+}
+
 // Mirrors the backend rules (PlantillaConfig) so the user sees every problem
-// at once, in plain words, before saving.
-export function validarBorrador(b: BorradorPlantilla, columnasCsv: string[]): string[] {
+// at once, in plain words, before saving. `columnasCsv` is null when editing
+// without a file: there is no header to check the columns against.
+export function validarBorrador(b: BorradorPlantilla, columnasCsv: string[] | null): string[] {
   const errores: string[] = []
   if (b.nombre.trim() === '') errores.push('Ponle un nombre a la plantilla')
 
@@ -139,13 +150,8 @@ export function validarBorrador(b: BorradorPlantilla, columnasCsv: string[]): st
     if (b.columnas[campo] === '') errores.push(`Elige la columna de ${etiqueta}`)
   }
 
-  const mapeadas = [
-    ...COLUMNAS_OBLIGATORIAS.map(c => b.columnas[c.campo]),
-    ...b.columnas.comision,
-    ...COLUMNAS_OPCIONALES.map(c => b.columnas[c.campo]),
-  ].filter(c => c !== '')
-  for (const columna of new Set(mapeadas)) {
-    if (!columnasCsv.includes(columna)) errores.push(`La columna "${columna}" no existe en este CSV`)
+  for (const columna of columnasCsv ? columnasDeBorrador(b) : []) {
+    if (!columnasCsv?.includes(columna)) errores.push(`La columna "${columna}" no existe en este CSV`)
   }
 
   if (b.valores_compra.length === 0) errores.push('Marca al menos un valor de compra')

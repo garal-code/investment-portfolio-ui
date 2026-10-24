@@ -23,6 +23,7 @@ import { getErrorStatus } from '@/lib/utils'
 import type {
   DelimitadorCsv,
   InspeccionCsv,
+  PlantillaImportacion,
   PrevisualizacionImportacion,
   ResultadoImportacion,
 } from '@/types'
@@ -61,6 +62,8 @@ export function ImportarCsv({ carteraId, onClose }: ImportarCsvProps) {
   const [previsualizacion, setPrevisualizacion] = useState<PrevisualizacionImportacion | null>(null)
   const [resultado, setResultado] = useState<ResultadoImportacion | null>(null)
   const [error, setError] = useState('')
+  // Quiet confirmation after saving a template without a file
+  const [aviso, setAviso] = useState('')
   const [obsoleta, setObsoleta] = useState(false)
 
   const panelRef = useRef<HTMLDivElement>(null)
@@ -91,6 +94,7 @@ export function ImportarCsv({ carteraId, onClose }: ImportarCsvProps) {
 
   async function leerArchivo(file: File | undefined) {
     setError('')
+    setAviso('')
     if (!file) {
       setArchivo(null)
       return
@@ -121,6 +125,7 @@ export function ImportarCsv({ carteraId, onClose }: ImportarCsvProps) {
   async function abrirEditor(delimitador: DelimitadorCsv | null, base: BorradorPlantilla | null, id?: number) {
     if (contenido === null) return
     setError('')
+    setAviso('')
     try {
       const datos = await inspeccionar.mutateAsync({ contenido, delimitador })
       setInspeccion(datos)
@@ -133,8 +138,26 @@ export function ImportarCsv({ carteraId, onClose }: ImportarCsvProps) {
     }
   }
 
+  // With a file, the editor reads it with the template's delimiter to offer its
+  // headers; without one, the saved values are edited by hand.
+  async function editarPlantilla(plantilla: PlantillaImportacion) {
+    const base = borradorDesdePlantilla(plantilla)
+    if (contenido !== null) return abrirEditor(plantilla.config.delimitador, base, plantilla.id)
+    setError('')
+    setAviso('')
+    setInspeccion(null)
+    setBorrador(base)
+    setEditandoId(plantilla.id)
+    setErroresBorrador([])
+    setPaso('columnas')
+  }
+
   async function cambiarDelimitador(delimitador: DelimitadorCsv | null) {
-    if (contenido === null || !borrador) return
+    if (!borrador) return
+    if (contenido === null) {
+      setBorrador({ ...borrador, delimitador })
+      return
+    }
     setError('')
     try {
       const datos = await inspeccionar.mutateAsync({ contenido, delimitador })
@@ -146,14 +169,19 @@ export function ImportarCsv({ carteraId, onClose }: ImportarCsvProps) {
   }
 
   async function guardarYPrevisualizar() {
-    if (!borrador || !inspeccion) return
-    const errores = validarBorrador(borrador, inspeccion.columnas)
+    if (!borrador) return
+    const errores = validarBorrador(borrador, inspeccion?.columnas ?? null)
     setErroresBorrador(errores)
     if (errores.length > 0) return
     setError('')
     try {
       const guardada = await guardar.mutateAsync({ id: editandoId, data: configDesdeBorrador(borrador) })
       setSeleccion(String(guardada.id))
+      if (contenido === null) {
+        setAviso(`Plantilla "${guardada.nombre}" guardada.`)
+        setPaso('archivo')
+        return
+      }
       await lanzarPrevisualizacion(guardada.id)
     } catch (e) {
       setError(mensajeErrorApi(e, 'No se pudo guardar la plantilla.'))
@@ -255,13 +283,8 @@ export function ImportarCsv({ carteraId, onClose }: ImportarCsvProps) {
                     type="button"
                     className="font-medium underline underline-offset-2 disabled:opacity-40"
                     style={{ color: 'var(--color-primary)' }}
-                    disabled={contenido === null || ocupado}
-                    title={contenido === null ? 'Elige antes un archivo' : undefined}
-                    onClick={() => abrirEditor(
-                      plantillaElegida.config.delimitador,
-                      borradorDesdePlantilla(plantillaElegida),
-                      plantillaElegida.id,
-                    )}
+                    disabled={ocupado}
+                    onClick={() => editarPlantilla(plantillaElegida)}
                   >
                     Editar plantilla
                   </button>
@@ -281,7 +304,11 @@ export function ImportarCsv({ carteraId, onClose }: ImportarCsvProps) {
         </div>
       )}
 
-      {paso === 'columnas' && inspeccion && borrador && (
+      {paso === 'archivo' && aviso && (
+        <p role="status" className="text-[13px]" style={{ color: 'var(--color-primary)' }}>{aviso}</p>
+      )}
+
+      {paso === 'columnas' && borrador && (
         <PlantillaEditor
           inspeccion={inspeccion}
           borrador={borrador}
@@ -350,7 +377,9 @@ export function ImportarCsv({ carteraId, onClose }: ImportarCsvProps) {
           <>
             <button type="button" className="btn-ghost" onClick={() => setPaso('archivo')}>Atrás</button>
             <button type="button" className="btn-primary" disabled={ocupado} onClick={guardarYPrevisualizar}>
-              {guardar.isPending || previsualizar.isPending ? 'Guardando…' : 'Guardar plantilla y previsualizar'}
+              {guardar.isPending || previsualizar.isPending
+                ? 'Guardando…'
+                : contenido === null ? 'Guardar plantilla' : 'Guardar plantilla y previsualizar'}
             </button>
           </>
         )}

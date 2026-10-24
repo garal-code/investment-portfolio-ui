@@ -267,6 +267,61 @@ describe('ImportarCsv — with a saved template', () => {
     expect(peticiones.crearPlantilla).toEqual([])
   })
 
+  it('renames a template without choosing a file', async () => {
+    const peticiones = mockBackend()
+    const actualizadas: unknown[] = []
+    server.use(
+      http.put('/api/v1/plantillas-importacion/:id', async ({ params, request }) => {
+        const body = await request.json() as object
+        actualizadas.push({ id: params.id, ...body })
+        return HttpResponse.json({ ...body, id: 7, created_at: 'x', updated_at: 'x' })
+      }),
+    )
+    renderImportar()
+    await waitFor(() => expect(screen.getByLabelText('Plantilla')).toHaveValue('7'))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Editar plantilla' }))
+
+    expect(await screen.findByLabelText('Nombre de la plantilla')).toHaveValue('Mi broker')
+    expect(screen.getByLabelText('Columna de Precio')).toHaveValue('Price')
+    fireEvent.change(screen.getByLabelText('Nombre de la plantilla'), { target: { value: 'Broker 2' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar plantilla' }))
+
+    expect(await screen.findByText('Plantilla "Broker 2" guardada.')).toBeInTheDocument()
+    expect(actualizadas).toEqual([{ id: '7', nombre: 'Broker 2', config }])
+    expect(peticiones.inspeccionar).toEqual([])
+    expect(peticiones.previsualizar).toEqual([])
+    expect(screen.getByLabelText('Archivo CSV')).toBeInTheDocument()
+  })
+
+  it('edits columns and type values by hand without a file', async () => {
+    mockBackend()
+    const actualizadas: { config: PlantillaConfig }[] = []
+    server.use(
+      http.put('/api/v1/plantillas-importacion/:id', async ({ request }) => {
+        const body = await request.json() as { nombre: string; config: PlantillaConfig }
+        actualizadas.push(body)
+        return HttpResponse.json({ ...body, id: 7, created_at: 'x', updated_at: 'x' })
+      }),
+    )
+    renderImportar()
+    await waitFor(() => expect(screen.getByLabelText('Plantilla')).toHaveValue('7'))
+    fireEvent.click(screen.getByRole('button', { name: 'Editar plantilla' }))
+    await screen.findByLabelText('Nombre de la plantilla')
+
+    fireEvent.change(screen.getByLabelText('Columna de Precio'), { target: { value: 'Price / share' } })
+    fireEvent.change(screen.getByLabelText('Columnas de comisión'), { target: { value: 'Fee, Tax' } })
+    fireEvent.change(screen.getByLabelText('Valores de venta'), { target: { value: 'Market sell, Limit sell' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar plantilla' }))
+
+    await screen.findByText('Plantilla "Mi broker" guardada.')
+    expect(actualizadas[0].config).toEqual({
+      ...config,
+      columnas: { ...config.columnas, precio: 'Price / share', comision: ['Fee', 'Tax'] },
+      valores_venta: ['Market sell', 'Limit sell'],
+    })
+  })
+
   it('deletes a template after confirming', async () => {
     const peticiones = mockBackend()
     vi.spyOn(window, 'confirm').mockReturnValue(true)

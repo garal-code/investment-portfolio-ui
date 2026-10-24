@@ -6,6 +6,7 @@ import {
   COLUMNAS_OPCIONALES,
   clasificacionDe,
   clasificarValor,
+  columnasDeBorrador,
   muestraDeColumna,
   type BorradorPlantilla,
   type Clasificacion,
@@ -13,7 +14,9 @@ import {
 import type { DelimitadorCsv, InspeccionCsv, SeparadorDecimal } from '@/types'
 
 interface PlantillaEditorProps {
-  inspeccion: InspeccionCsv
+  // null when editing a saved template without a file: columns and type
+  // values are typed by hand instead of picked from the file
+  inspeccion: InspeccionCsv | null
   borrador: BorradorPlantilla
   onChange: (borrador: BorradorPlantilla) => void
   // A new delimiter changes the headers, so the parent inspects the file again
@@ -39,8 +42,10 @@ const CLASIFICACIONES: { value: Clasificacion; label: string }[] = [
   { value: 'ignorar', label: 'Ignorar' },
 ]
 
-function Muestra({ inspeccion, columna }: { inspeccion: InspeccionCsv; columna: string }) {
-  const muestra = columna ? muestraDeColumna(inspeccion, columna) : null
+const LISTA_COLUMNAS = 'plantilla-columnas-conocidas'
+
+function Muestra({ inspeccion, columna }: { inspeccion: InspeccionCsv | null; columna: string }) {
+  const muestra = inspeccion && columna ? muestraDeColumna(inspeccion, columna) : null
   if (!muestra) return null
   return (
     <p className="mt-1 text-[12px] truncate" style={{ color: 'var(--color-ink-2)' }}>
@@ -49,12 +54,14 @@ function Muestra({ inspeccion, columna }: { inspeccion: InspeccionCsv; columna: 
   )
 }
 
-// Comma-separated values typed by hand, for type columns with too many
-// distinct values to list (the backend only returns up to 20).
-function ValoresTexto({ label, valores, onChange }: {
+// Comma-separated values typed by hand: type values when the file is missing
+// or has too many distinct values to list (the backend returns up to 20), and
+// commission columns when there is no file.
+function ValoresTexto({ label, valores, onChange, placeholder = 'Market buy, Limit buy' }: {
   label: string
   valores: string[]
   onChange: (valores: string[]) => void
+  placeholder?: string
 }) {
   const [texto, setTexto] = useState(valores.join(', '))
   return (
@@ -63,7 +70,7 @@ function ValoresTexto({ label, valores, onChange }: {
       <input
         id={`valores-${label}`}
         className="input-dark"
-        placeholder="Market buy, Limit buy"
+        placeholder={placeholder}
         value={texto}
         onChange={e => {
           setTexto(e.target.value)
@@ -71,6 +78,43 @@ function ValoresTexto({ label, valores, onChange }: {
         }}
       />
     </div>
+  )
+}
+
+// A file offers its headers to pick from; without one the header is typed,
+// with the template's current columns as suggestions.
+function CampoColumna({ id, etiqueta, valor, vacio, columnasCsv, onChange }: {
+  id: string
+  etiqueta: string
+  valor: string
+  vacio: string
+  columnasCsv: string[] | null
+  onChange: (valor: string) => void
+}) {
+  if (columnasCsv === null) {
+    return (
+      <input
+        id={id}
+        aria-label={`Columna de ${etiqueta}`}
+        className="input-dark"
+        list={LISTA_COLUMNAS}
+        placeholder={vacio}
+        value={valor}
+        onChange={e => onChange(e.target.value)}
+      />
+    )
+  }
+  return (
+    <select
+      id={id}
+      aria-label={`Columna de ${etiqueta}`}
+      className="input-dark"
+      value={valor}
+      onChange={e => onChange(e.target.value)}
+    >
+      <option value="">{vacio}</option>
+      {columnasCsv.map(c => <option key={c} value={c}>{c}</option>)}
+    </select>
   )
 }
 
@@ -88,10 +132,22 @@ export function PlantillaEditor({ inspeccion, borrador, onChange, onDelimitadorC
           : [...columnas.comision, columna],
       },
     })
-  const valoresTipo = columnas.tipo ? inspeccion.valores_distintos[columnas.tipo] : undefined
+  const columnasCsv = inspeccion?.columnas ?? null
+  const valoresTipo = inspeccion && columnas.tipo ? inspeccion.valores_distintos[columnas.tipo] : undefined
+  // Computed once per opening: suggestions must not shrink while typing
+  const [conocidas] = useState(() => columnasDeBorrador(borrador))
 
   return (
     <div className="space-y-6">
+      {!inspeccion && (
+        <p className="text-[13px] px-3.5 py-3 rounded-[10px]" style={{ background: '#fdf6ee', color: 'var(--color-ink)' }}>
+          Estás editando sin archivo: escribe los nombres de columna tal como aparecen en la cabecera del CSV. Si
+          subes un archivo, podrás elegirlos de una lista y ver ejemplos.
+        </p>
+      )}
+      <datalist id={LISTA_COLUMNAS}>
+        {conocidas.map(c => <option key={c} value={c} />)}
+      </datalist>
       <div>
         <label className="section-label" htmlFor="plantilla-nombre">Nombre de la plantilla</label>
         <input
@@ -150,16 +206,14 @@ export function PlantillaEditor({ inspeccion, borrador, onChange, onDelimitadorC
           {COLUMNAS_OBLIGATORIAS.map(({ campo, etiqueta }) => (
             <div key={campo}>
               <label className="section-label" htmlFor={`columna-${campo}`}>{etiqueta}</label>
-              <select
+              <CampoColumna
                 id={`columna-${campo}`}
-                aria-label={`Columna de ${etiqueta}`}
-                className="input-dark"
-                value={columnas[campo]}
-                onChange={e => setColumna(campo, e.target.value)}
-              >
-                <option value="">Elige una columna</option>
-                {inspeccion.columnas.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
+                etiqueta={etiqueta}
+                valor={columnas[campo]}
+                vacio="Elige una columna"
+                columnasCsv={columnasCsv}
+                onChange={valor => setColumna(campo, valor)}
+              />
               <Muestra inspeccion={inspeccion} columna={columnas[campo]} />
             </div>
           ))}
@@ -174,7 +228,7 @@ export function PlantillaEditor({ inspeccion, borrador, onChange, onDelimitadorC
         <p className="text-[12px] mb-3" style={{ color: 'var(--color-ink-2)' }}>
           Lo que no sea compra ni venta (depósitos, dividendos, intereses…) no se importa.
         </p>
-        {!columnas.tipo && (
+        {inspeccion && !columnas.tipo && (
           <p className="text-[12px] px-3 py-2 rounded-lg border border-dashed" style={{ color: 'var(--color-ink-2)', borderColor: 'var(--color-border)' }}>
             Elige antes la columna de Tipo de operación.
           </p>
@@ -194,7 +248,7 @@ export function PlantillaEditor({ inspeccion, borrador, onChange, onDelimitadorC
             ))}
           </ul>
         )}
-        {columnas.tipo && !valoresTipo && (
+        {(!inspeccion || (columnas.tipo && !valoresTipo)) && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <ValoresTexto
               key={`compra-${columnas.tipo}`}
@@ -221,16 +275,14 @@ export function PlantillaEditor({ inspeccion, borrador, onChange, onDelimitadorC
           {COLUMNAS_OPCIONALES.map(({ campo, etiqueta, ayuda }) => (
             <div key={campo}>
               <label className="section-label" htmlFor={`columna-${campo}`}>{etiqueta}</label>
-              <select
+              <CampoColumna
                 id={`columna-${campo}`}
-                aria-label={`Columna de ${etiqueta}`}
-                className="input-dark"
-                value={columnas[campo]}
-                onChange={e => setColumna(campo, e.target.value)}
-              >
-                <option value="">Sin columna</option>
-                {inspeccion.columnas.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
+                etiqueta={etiqueta}
+                valor={columnas[campo]}
+                vacio="Sin columna"
+                columnasCsv={columnasCsv}
+                onChange={valor => setColumna(campo, valor)}
+              />
               <Muestra inspeccion={inspeccion} columna={columnas[campo]} />
               <p className="mt-1 text-[12px]" style={{ color: 'var(--color-ink-2)' }}>{ayuda}</p>
             </div>
@@ -252,8 +304,19 @@ export function PlantillaEditor({ inspeccion, borrador, onChange, onDelimitadorC
       <fieldset>
         <legend className="text-[13px] font-medium" style={{ color: 'var(--color-ink)' }}>Comisión</legend>
         <p className="text-[12px] mb-3" style={{ color: 'var(--color-ink-2)' }}>
-          Marca las columnas de gastos: se suman en euros. Sin ninguna, la comisión es 0.
+          {inspeccion
+            ? 'Marca las columnas de gastos: se suman en euros. Sin ninguna, la comisión es 0.'
+            : 'Escribe las columnas de gastos separadas por comas: se suman en euros. Sin ninguna, la comisión es 0.'}
         </p>
+        {!inspeccion && (
+          <ValoresTexto
+            label="Columnas de comisión"
+            placeholder="Fee, Tax"
+            valores={columnas.comision}
+            onChange={comision => onChange({ ...borrador, columnas: { ...columnas, comision } })}
+          />
+        )}
+        {inspeccion && (
         <div className="flex flex-wrap gap-x-5 gap-y-2">
           {inspeccion.columnas.map(c => (
             <label key={c} className="flex items-center gap-2 text-[13px]" style={{ color: 'var(--color-ink)' }}>
@@ -266,6 +329,7 @@ export function PlantillaEditor({ inspeccion, borrador, onChange, onDelimitadorC
             </label>
           ))}
         </div>
+        )}
       </fieldset>
     </div>
   )
