@@ -7,7 +7,7 @@ import { MovimientoForm } from '@/components/forms/MovimientoForm'
 import { Loading, EmptyState } from '@/components/ui/Loading'
 import { useMovimientos, useEliminarMovimiento } from '@/hooks/useCartera'
 import { useActiveCartera } from '@/contexts/CarteraContext'
-import { formatEur, formatFecha } from '@/lib/utils'
+import { formatCurrency, formatEur, formatFecha } from '@/lib/utils'
 import { filterMovimientosPorIsin } from '@/lib/movimientos-filter'
 import { Trash2, Plus, X } from 'lucide-react'
 
@@ -160,7 +160,8 @@ function MovimientosPageContent() {
                       {mov.cantidad}
                     </td>
                     <td className="px-3.5 py-[9px]" style={{ color: 'var(--color-ink-2)' }}>
-                      {formatEur(mov.precio)}
+                      {/* Native quote-currency price; the commission is stored in EUR */}
+                      {formatCurrency(mov.precio, mov.instrumento.moneda || 'EUR')}
                     </td>
                     <td className="px-3.5 py-[9px]" style={{ color: 'var(--color-muted)' }}>
                       {mov.comision > 0 ? formatEur(mov.comision) : '—'}
