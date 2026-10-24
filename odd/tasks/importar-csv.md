@@ -43,3 +43,8 @@ File locator: `odd/tasks/importar-csv.md` · Engram mirror: `odd/importar-csv-ui
   scroll test; 337 tests pass. Playwright 1440x900, 41-row CSV: table 700px, actions visible without scrolling.
 - **L5** (finding, open): the backend requires at least one sell value (`valores_venta` min 1), and the classifier only
   lists values present in the file, so a CSV with only buys cannot be saved as a template. Decision pending.
+- **L6** (2026-10-24, user): "no me gusta la edicion de la plantillas solo puedo cambiarla cuando añado un fichero, pero
+  imaginate que solo quiero cambiar el nombre de la plantilla ahi no puedo" → `fe5f6a9`: without a file, "Editar
+  plantilla" opens the editor in text mode (columns with the template's own as suggestions, comma-separated type values
+  and commission columns) and saves without previewing; with a file nothing changes. RED 3 / GREEN; 340 tests pass.
+  Playwright (agent test user): renamed a template without a file, mapping kept, notice shown; temp template deleted.
