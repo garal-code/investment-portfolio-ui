@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { AppShell } from '@/components/layout/AppShell'
 import { Topbar } from '@/components/layout/Topbar'
 import { MovimientoForm } from '@/components/forms/MovimientoForm'
+import { ImportarCsv } from '@/components/importacion/ImportarCsv'
 import { Loading, EmptyState } from '@/components/ui/Loading'
 import { useMovimientos, useEliminarMovimiento } from '@/hooks/useCartera'
 import { useActiveCartera } from '@/contexts/CarteraContext'
@@ -11,7 +12,7 @@ import { CabeceraOrdenable, COLUMNAS_MOVIMIENTOS } from '@/components/movimiento
 import { ORDEN_INICIAL, ordenarMovimientos, siguienteOrden, type OrdenMovimientos } from '@/lib/movimientos-orden'
 import { formatCurrency, formatEur, formatFecha } from '@/lib/utils'
 import { filterMovimientosPorIsin } from '@/lib/movimientos-filter'
-import { Trash2, Plus, X } from 'lucide-react'
+import { Trash2, Plus, X, Upload } from 'lucide-react'
 
 // `useSearchParams` requires a Suspense boundary for static builds (Next.js
 // App Router) — see node_modules/next/dist/docs/.../use-search-params.md
@@ -36,7 +37,12 @@ export default function MovimientosPage() {
 }
 
 function MovimientosPageContent() {
-  const [showForm, setShowForm] = useState(false)
+  // One panel at a time: the manual form or the CSV import
+  const [panel, setPanel] = useState<'nuevo' | 'importar' | null>(null)
+  const showForm = panel === 'nuevo'
+  // While importing, the preview is the only table: the stored movements would
+  // read as part of it
+  const showTabla = panel !== 'importar'
   const { carteraId, isLoading: carteraLoading } = useActiveCartera()
   const { data: movs, isLoading, isError } = useMovimientos(carteraId)
   const { mutate: eliminar } = useEliminarMovimiento(carteraId)
@@ -54,7 +60,7 @@ function MovimientosPageContent() {
 
         {carteraLoading && <Loading text="Cargando carteras..." />}
         {!carteraLoading && carteraId === null && (
-          <EmptyState text="No tenés carteras todavía. La gestión de carteras llega próximamente en Ajustes." />
+          <EmptyState text="No tienes carteras todavía. La gestión de carteras llega próximamente en Ajustes." />
         )}
 
         {carteraId !== null && (
@@ -75,10 +81,16 @@ function MovimientosPageContent() {
           </div>
         )}
 
-        {/* Botón añadir */}
-        <div className="flex justify-end">
+        {/* Añadir: a mano o desde el CSV del broker */}
+        <div className="flex justify-end gap-2">
+          {panel !== 'importar' && (
+            <button onClick={() => setPanel('importar')} className="btn-ghost flex items-center gap-2">
+              <Upload size={14} />
+              Importar CSV
+            </button>
+          )}
           <button
-            onClick={() => setShowForm(v => !v)}
+            onClick={() => setPanel(showForm ? null : 'nuevo')}
             className={showForm ? 'btn-ghost flex items-center gap-2' : 'btn-primary flex items-center gap-2'}
           >
             {showForm ? <X size={14} /> : <Plus size={14} />}
@@ -92,15 +104,19 @@ function MovimientosPageContent() {
             <p className="section-label mb-4">Añadir movimiento</p>
             <MovimientoForm
               carteraId={carteraId}
-              onSuccess={() => setShowForm(false)}
+              onSuccess={() => setPanel(null)}
             />
           </div>
         )}
 
-        {/* Tabla */}
-        {isLoading && <Loading text="Cargando movimientos..." />}
+        {panel === 'importar' && (
+          <ImportarCsv carteraId={carteraId} onClose={() => setPanel(null)} />
+        )}
 
-        {movsFiltrados && movsFiltrados.length > 0 && (
+        {/* Tabla */}
+        {showTabla && isLoading && <Loading text="Cargando movimientos..." />}
+
+        {showTabla && movsFiltrados && movsFiltrados.length > 0 && (
           <div className="card overflow-hidden">
             <div className="overflow-x-auto">
             <table className="w-full text-[12px] border-collapse">
@@ -195,13 +211,13 @@ function MovimientosPageContent() {
           </div>
         )}
 
-        {isError && (
+        {showTabla && isError && (
           <EmptyState text="Error al cargar los movimientos. Verificá la conexión con el backend." />
         )}
-        {!isLoading && !isError && movs?.length === 0 && (
+        {showTabla && !isLoading && !isError && movs?.length === 0 && (
           <EmptyState text="No hay movimientos aún. Añade tu primera operación." />
         )}
-        {!isLoading && !isError && movs && movs.length > 0 && movsFiltrados?.length === 0 && (
+        {showTabla && !isLoading && !isError && movs && movs.length > 0 && movsFiltrados?.length === 0 && (
           <EmptyState text={`No hay movimientos para ${isinFiltro}.`} />
         )}
         </>
