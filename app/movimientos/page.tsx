@@ -7,6 +7,8 @@ import { MovimientoForm } from '@/components/forms/MovimientoForm'
 import { Loading, EmptyState } from '@/components/ui/Loading'
 import { useMovimientos, useEliminarMovimiento } from '@/hooks/useCartera'
 import { useActiveCartera } from '@/contexts/CarteraContext'
+import { CabeceraOrdenable, COLUMNAS_MOVIMIENTOS } from '@/components/movimientos/CabeceraOrdenable'
+import { ORDEN_INICIAL, ordenarMovimientos, siguienteOrden, type OrdenMovimientos } from '@/lib/movimientos-orden'
 import { formatCurrency, formatEur, formatFecha } from '@/lib/utils'
 import { filterMovimientosPorIsin } from '@/lib/movimientos-filter'
 import { Trash2, Plus, X } from 'lucide-react'
@@ -41,7 +43,8 @@ function MovimientosPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const isinFiltro = searchParams.get('isin')
-  const movsFiltrados = movs ? filterMovimientosPorIsin(movs, isinFiltro) : movs
+  const [orden, setOrden] = useState<OrdenMovimientos>(ORDEN_INICIAL)
+  const movsFiltrados = movs ? ordenarMovimientos(filterMovimientosPorIsin(movs, isinFiltro), orden) : movs
 
   return (
     <AppShell>
@@ -103,9 +106,13 @@ function MovimientosPageContent() {
             <table className="w-full text-[12px] border-collapse">
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
-                  {['Instrumento', 'Tipo', 'Fecha', 'Cantidad', 'Precio', 'Comisión', ''].map(h => (
-                    <th
-                      key={h}
+                  {COLUMNAS_MOVIMIENTOS.map(({ label, orden: columna }) => (
+                    <CabeceraOrdenable
+                      key={label}
+                      label={label}
+                      columna={columna}
+                      orden={orden}
+                      onOrdenar={c => setOrden(o => siguienteOrden(o, c))}
                       style={{
                         padding: '10px 14px',
                         fontSize: 9,
@@ -116,9 +123,7 @@ function MovimientosPageContent() {
                         textAlign: 'left',
                         whiteSpace: 'nowrap',
                       }}
-                    >
-                      {h}
-                    </th>
+                    />
                   ))}
                 </tr>
               </thead>
@@ -131,7 +136,7 @@ function MovimientosPageContent() {
                   >
                     {/* Instrumento */}
                     <td className="px-3.5 py-[9px]">
-                      <p className="font-medium truncate max-w-[160px]" style={{ color: 'var(--color-ink)' }}>
+                      <p className="font-medium min-w-[220px]" style={{ color: 'var(--color-ink)' }}>
                         {mov.instrumento.nombre || mov.instrumento.isin}
                       </p>
                       <p className="text-[10px] font-mono" style={{ color: 'var(--color-muted)' }}>
