@@ -35,8 +35,8 @@ export default function RegisterPage() {
   return (
     <AuthCard
       title="Crear cuenta"
-      subtitle="Empezá a llevar el control de tu cartera"
-      footer={{ text: '¿Ya tenés cuenta?', linkText: 'Iniciá sesión', href: '/login' }}
+      subtitle="Empieza a llevar el control de tu cartera"
+      footer={{ text: '¿Ya tienes cuenta?', linkText: 'Inicia sesión', href: '/login' }}
     >
       <form onSubmit={handleSubmit} className="space-y-3">
         <div>

@@ -31,8 +31,8 @@ export default function LoginPage() {
   return (
     <AuthCard
       title="Iniciar sesión"
-      subtitle="Accedé a tu cartera de inversión"
-      footer={{ text: '¿No tenés cuenta?', linkText: 'Registrate', href: '/register' }}
+      subtitle="Accede a tu cartera de inversión"
+      footer={{ text: '¿No tienes cuenta?', linkText: 'Regístrate', href: '/register' }}
     >
       <form onSubmit={handleSubmit} className="space-y-3">
         <div>

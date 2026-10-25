@@ -10,8 +10,8 @@ export default function ResetPasswordPage() {
   return (
     <AuthCard
       title="Restablecer contraseña"
-      subtitle="Elegí una nueva contraseña"
-      footer={{ text: '¿La recordaste?', linkText: 'Iniciá sesión', href: '/login' }}
+      subtitle="Elige una nueva contraseña"
+      footer={{ text: '¿La recordaste?', linkText: 'Inicia sesión', href: '/login' }}
     >
       <Suspense fallback={null}>
         <ResetPasswordForm />

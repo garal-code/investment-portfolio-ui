@@ -84,7 +84,7 @@ export default function DashboardPage() {
       <div className="flex-1 overflow-y-auto p-5 space-y-6">
         {carteraLoading && <Loading text="Cargando carteras..." />}
         {!carteraLoading && carteraId === null && (
-          <EmptyState text="No tenés carteras todavía. La gestión de carteras llega próximamente en Ajustes." />
+          <EmptyState text="No tienes carteras todavía. La gestión de carteras llega próximamente en Ajustes." />
         )}
         {carteraId !== null && isLoading && <Loading text="Cargando posiciones y precios..." />}
 
@@ -115,7 +115,7 @@ export default function DashboardPage() {
         )}
 
         {carteraId !== null && isError && (
-          <EmptyState text="Error al conectar con el servidor. Verificá que el backend esté activo." />
+          <EmptyState text="Error al conectar con el servidor. Verifica que el backend esté activo." />
         )}
         {carteraId !== null && !isLoading && !isError && !resumen && (
           <EmptyState text="No se pudo cargar la cartera. ¿Está el backend activo?" />

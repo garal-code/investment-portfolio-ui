@@ -57,7 +57,7 @@ export default function AnalisisPage() {
       <div className="flex-1 overflow-y-auto p-5 space-y-6">
         {carteraLoading && <Loading text="Cargando carteras..." />}
         {!carteraLoading && carteraId === null && (
-          <EmptyState text="No tenés carteras todavía. La gestión de carteras llega próximamente en Ajustes." />
+          <EmptyState text="No tienes carteras todavía. La gestión de carteras llega próximamente en Ajustes." />
         )}
 
         {carteraId !== null && (

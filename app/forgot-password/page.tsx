@@ -30,7 +30,7 @@ export default function ForgotPasswordPage() {
     <AuthCard
       title="Recuperar contraseña"
       subtitle="Te enviamos un enlace para restablecerla"
-      footer={{ text: '¿La recordaste?', linkText: 'Iniciá sesión', href: '/login' }}
+      footer={{ text: '¿La recordaste?', linkText: 'Inicia sesión', href: '/login' }}
     >
       {sent ? (
         <p className="text-[13px]" style={{ color: 'var(--color-ink-2)' }}>

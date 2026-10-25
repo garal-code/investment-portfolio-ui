@@ -244,7 +244,7 @@ describe('AnalisisPage — methodology link', () => {
     useActiveCarteraMock.mockReturnValue({ carteras: [], carteraId: null, isLoading: false })
     renderPage()
 
-    expect(screen.getByText(/No tenés carteras todavía/)).toBeInTheDocument()
+    expect(screen.getByText(/No tienes carteras todavía/)).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: METODOLOGIA })).not.toBeInTheDocument()
   })
 })
@@ -302,7 +302,7 @@ describe('AnalisisPage — error and empty states', () => {
     useActiveCarteraMock.mockReturnValue({ carteraId: null, carteras: [], isLoading: false })
     renderPage()
 
-    expect(screen.getByText(/No tenés carteras todavía/)).toBeInTheDocument()
+    expect(screen.getByText(/No tienes carteras todavía/)).toBeInTheDocument()
     expect(screen.queryByRole('tablist')).not.toBeInTheDocument()
     await new Promise(resolve => setTimeout(resolve, 20))
     expect(requested).toHaveLength(0)

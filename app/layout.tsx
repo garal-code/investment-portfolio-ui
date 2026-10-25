@@ -5,7 +5,7 @@ import { Providers } from './providers'
 
 export const metadata: Metadata = {
   title: 'Garal · Cartera',
-  description: 'Gestor de cartera de inversión personal',
+  description: 'Seguimiento de tu cartera de inversión',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
