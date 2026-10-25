@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { AUTH_COOKIE_NAME } from '@/lib/session'
 
 // Next.js 16 renamed the `middleware.ts` convention to `proxy.ts` (same
 // runtime behavior, new export name) — see
@@ -8,10 +9,6 @@ import type { NextRequest } from 'next/server'
 // equivalent and supersedes that filename per the deprecation notice.
 
 const PROTECTED_PATHS = ['/dashboard', '/movimientos', '/markowitz', '/ajustes']
-
-// Confirmed against the backend design (sdd/user-authentication/design,
-// garal-screener): httpOnly/Secure/SameSite=Lax cookie named `access_token`.
-const AUTH_COOKIE_NAME = 'access_token'
 
 function isProtectedPath(pathname: string): boolean {
   return PROTECTED_PATHS.some(path => pathname === path || pathname.startsWith(`${path}/`))
