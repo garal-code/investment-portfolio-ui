@@ -41,6 +41,7 @@ yarn-error.log*
 next-env.d.ts
 
 # local tooling / design process artifacts
+.atl/
 .playwright-mcp/
 design_handoff_tu_cartera/
 linkedin-video/
