@@ -192,6 +192,12 @@ describe('getErrorMessage — always returns text', () => {
     )
   })
 
+  it('falls back when the string detail is empty or blank', () => {
+    expect(getErrorMessage(axiosError(400, { detail: '' }), fallback)).toBe(fallback)
+    expect(getErrorMessage(axiosError(400, { detail: '   ' }), fallback)).toBe(fallback)
+    expect(getErrorMessage(axiosError(400, { detail: '\n\t' }), fallback)).toBe(fallback)
+  })
+
   it('falls back when detail is a list (422 validation errors come in English)', () => {
     const detail = [
       { loc: ['body', 'email'], msg: 'value is not a valid email address', type: 'value_error' },
@@ -205,7 +211,6 @@ describe('getErrorMessage — always returns text', () => {
     expect(getErrorMessage(axiosError(400, { detail: { code: 'bad_request' } }), fallback)).toBe(fallback)
     expect(getErrorMessage(axiosError(400, { detail: 400 }), fallback)).toBe(fallback)
     expect(getErrorMessage(axiosError(400, { detail: true }), fallback)).toBe(fallback)
-    expect(getErrorMessage(axiosError(400, { detail: '' }), fallback)).toBe(fallback)
   })
 
   it('falls back when there is no response detail at all', () => {
