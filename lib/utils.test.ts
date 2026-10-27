@@ -4,7 +4,7 @@ import {
   formatEur, formatCurrency, formatPct, formatPeso, formatRatioPct, formatNum, formatMes, maskAmount,
   formatPp, formatEurSigned,
   TREEMAP_COLORS, treemapColor,
-  getErrorStatus, getFronteraErrorMessage,
+  getErrorMessage, getErrorStatus, getFronteraErrorMessage,
 } from './utils'
 
 describe('formatEur — es-ES currency formatting', () => {
@@ -182,6 +182,43 @@ function axiosError(status: number, data: unknown): AxiosError {
   } as AxiosResponse
   return new AxiosError(`Request failed with status code ${status}`, 'ERR_BAD_RESPONSE', undefined, undefined, response)
 }
+
+describe('getErrorMessage — always returns text', () => {
+  const fallback = 'No se pudo crear la cuenta'
+
+  it('returns a string detail as is', () => {
+    expect(getErrorMessage(axiosError(409, { detail: 'El email ya está en uso' }), fallback)).toBe(
+      'El email ya está en uso',
+    )
+  })
+
+  it('falls back when the string detail is empty or blank', () => {
+    expect(getErrorMessage(axiosError(400, { detail: '' }), fallback)).toBe(fallback)
+    expect(getErrorMessage(axiosError(400, { detail: '   ' }), fallback)).toBe(fallback)
+    expect(getErrorMessage(axiosError(400, { detail: '\n\t' }), fallback)).toBe(fallback)
+  })
+
+  it('falls back when detail is a list (422 validation errors come in English)', () => {
+    const detail = [
+      { loc: ['body', 'email'], msg: 'value is not a valid email address', type: 'value_error' },
+      { loc: ['body', 'password'], msg: 'String should have at least 8 characters', type: 'string_too_short' },
+    ]
+    expect(getErrorMessage(axiosError(422, { detail }), fallback)).toBe(fallback)
+    expect(getErrorMessage(axiosError(422, { detail: [] }), fallback)).toBe(fallback)
+  })
+
+  it('falls back when detail is neither text nor a list', () => {
+    expect(getErrorMessage(axiosError(400, { detail: { code: 'bad_request' } }), fallback)).toBe(fallback)
+    expect(getErrorMessage(axiosError(400, { detail: 400 }), fallback)).toBe(fallback)
+    expect(getErrorMessage(axiosError(400, { detail: true }), fallback)).toBe(fallback)
+  })
+
+  it('falls back when there is no response detail at all', () => {
+    expect(getErrorMessage(new Error('Network Error'), fallback)).toBe(fallback)
+    expect(getErrorMessage(axiosError(500, 'Internal Server Error'), fallback)).toBe(fallback)
+    expect(getErrorMessage(null, fallback)).toBe(fallback)
+  })
+})
 
 describe('getErrorStatus', () => {
   it('returns the HTTP status of an axios error', () => {

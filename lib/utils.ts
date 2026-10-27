@@ -166,13 +166,12 @@ export function hoy(): string {
 
 // ── Errores de API ──────────────────────────────────────────────────────────
 
+// Always returns text. Only a string `detail` with visible text is shown as is;
+// a blank one, any other shape (including FastAPI 422 validation lists, whose
+// `msg` is English) or an error without a response uses the fallback.
 export function getErrorMessage(error: unknown, fallback: string): string {
-  const detail =
-    error != null &&
-    typeof error === 'object' &&
-    'response' in error &&
-    (error as { response?: { data?: { detail?: string } } }).response?.data?.detail
-  return detail || fallback
+  const detail = (error as { response?: { data?: { detail?: unknown } } } | null)?.response?.data?.detail
+  return typeof detail === 'string' && detail.trim() ? detail : fallback
 }
 
 export function getErrorStatus(error: unknown): number | undefined {
