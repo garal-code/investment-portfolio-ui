@@ -2,16 +2,20 @@
 import { useEffect, useState } from 'react'
 import { useCrearMovimiento, useAutodescubrir } from '@/hooks/useCartera'
 import { hoy } from '@/lib/utils'
+import { cantidadPorcentaje, PORCENTAJES_VENTA } from '@/lib/venta'
 import { Loader2 } from 'lucide-react'
 
 interface MovimientoFormProps {
   carteraId: number
   onSuccess?: () => void
+  // Sell an existing position: ISIN fixed, tipo always venta, quantity
+  // shortcuts as percentages of cantidadTotal.
+  venta?: { isin: string; cantidadTotal: number }
 }
 
-export function MovimientoForm({ carteraId, onSuccess }: MovimientoFormProps) {
-  const [isin, setIsin]             = useState('')
-  const [tipo, setTipo]             = useState<'compra' | 'venta'>('compra')
+export function MovimientoForm({ carteraId, onSuccess, venta }: MovimientoFormProps) {
+  const [isin, setIsin]             = useState(venta?.isin ?? '')
+  const [tipo, setTipo]             = useState<'compra' | 'venta'>(venta ? 'venta' : 'compra')
   const [fecha, setFecha]           = useState(hoy())
   const [cantidad, setCantidad]     = useState('')
   const [precio, setPrecio]         = useState('')
@@ -48,6 +52,13 @@ export function MovimientoForm({ carteraId, onSuccess }: MovimientoFormProps) {
       setError('ISIN, cantidad y precio son obligatorios')
       return
     }
+    if (venta) {
+      const n = parseFloat(cantidad)
+      if (!(Number.isFinite(n) && n > 0 && n <= venta.cantidadTotal)) {
+        setError(`La cantidad debe ser mayor que 0 y no superar ${venta.cantidadTotal}`)
+        return
+      }
+    }
     // Sin tipo_cambio, el backend asume 1.0 (garal-screener's
     // calculos._tipo_cambio) y trata el precio nativo como si ya fuera EUR,
     // corrompiendo silenciosamente coste_total/precio_medio y por tanto la
@@ -69,7 +80,8 @@ export function MovimientoForm({ carteraId, onSuccess }: MovimientoFormProps) {
         tipo_cambio: tipoCambio ? parseFloat(tipoCambio) : undefined,
         notas: notas || undefined,
       })
-      setIsin(''); setCantidad(''); setPrecio(''); setComision('')
+      if (!venta) setIsin('')
+      setCantidad(''); setPrecio(''); setComision('')
       setTipoCambio(''); setNotas('')
       onSuccess?.()
     } catch (e: unknown) {
@@ -96,6 +108,7 @@ export function MovimientoForm({ carteraId, onSuccess }: MovimientoFormProps) {
           value={isin}
           onChange={e => setIsin(e.target.value.toUpperCase())}
           maxLength={12}
+          readOnly={venta != null}
         />
       </div>
 
@@ -123,8 +136,8 @@ export function MovimientoForm({ carteraId, onSuccess }: MovimientoFormProps) {
         </div>
       </div>
 
-      {/* Tipo */}
-      <div>
+      {/* Tipo (fijo en venta al vender una posición) */}
+      {!venta && <div>
         <label className="section-label">Tipo de operación</label>
         <div className="flex gap-2">
           {(['compra', 'venta'] as const).map(t => (
@@ -144,7 +157,7 @@ export function MovimientoForm({ carteraId, onSuccess }: MovimientoFormProps) {
             </button>
           ))}
         </div>
-      </div>
+      </div>}
 
       {/* Fecha, cantidad, precio */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -155,6 +168,21 @@ export function MovimientoForm({ carteraId, onSuccess }: MovimientoFormProps) {
         <div>
           <label className="section-label">Cantidad</label>
           <input type="number" className="input-dark" placeholder="10" value={cantidad} onChange={e => setCantidad(e.target.value)} min="0" step="any" />
+          {venta && (
+            <div className="flex gap-1 mt-1.5">
+              {PORCENTAJES_VENTA.map(pct => (
+                <button
+                  key={pct}
+                  type="button"
+                  onClick={() => setCantidad(String(cantidadPorcentaje(venta.cantidadTotal, pct)))}
+                  className="flex-1 py-1 rounded-md text-xs font-medium"
+                  style={{ background: 'var(--color-bg)', color: 'var(--color-muted)', border: '1px solid var(--color-border)' }}
+                >
+                  {pct} %
+                </button>
+              ))}
+            </div>
+          )}
         </div>
         <div>
           <label className="section-label">Precio</label>
@@ -178,7 +206,7 @@ export function MovimientoForm({ carteraId, onSuccess }: MovimientoFormProps) {
 
       <div>
         <label className="section-label">Notas (opcional)</label>
-        <input className="input-dark" placeholder="Ej: compra programada" value={notas} onChange={e => setNotas(e.target.value)} />
+        <input className="input-dark" placeholder={venta ? 'Ej: toma de beneficios' : 'Ej: compra programada'} value={notas} onChange={e => setNotas(e.target.value)} />
       </div>
 
       {error && (
@@ -188,7 +216,7 @@ export function MovimientoForm({ carteraId, onSuccess }: MovimientoFormProps) {
       )}
 
       <button onClick={handleSubmit} disabled={isPending} className="btn-primary w-full">
-        {isPending ? 'Guardando...' : 'Guardar movimiento'}
+        {isPending ? 'Guardando...' : venta ? 'Registrar venta' : 'Guardar movimiento'}
       </button>
     </div>
   )

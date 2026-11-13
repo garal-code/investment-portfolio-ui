@@ -98,3 +98,60 @@ describe('MovimientoForm — tipo de cambio requerido en divisa extranjera', () 
     ))
   })
 })
+
+describe('MovimientoForm — venta de una posición', () => {
+  const venta = { isin: 'ES0148396007', cantidadTotal: 14 }
+
+  it('prefills the ISIN as read-only and hides the compra/venta toggle', async () => {
+    render(<MovimientoForm carteraId={1} venta={venta} />)
+    const isin = screen.getByPlaceholderText('ES0148396007') as HTMLInputElement
+    expect(isin.value).toBe('ES0148396007')
+    expect(isin.readOnly).toBe(true)
+    await waitFor(() => expect(screen.getByDisplayValue('Inditex')).toBeInTheDocument())
+    expect(screen.queryByRole('button', { name: 'compra' })).not.toBeInTheDocument()
+  })
+
+  it.each([
+    ['25 %', '3'],
+    ['50 %', '7'],
+    ['75 %', '10'],
+    ['100 %', '14'],
+  ])('the %s button fills the quantity with %s', (label, esperado) => {
+    render(<MovimientoForm carteraId={1} venta={venta} />)
+    fireEvent.click(screen.getByRole('button', { name: label }))
+    expect((screen.getByPlaceholderText('10') as HTMLInputElement).value).toBe(esperado)
+  })
+
+  it('keeps the quantity editable after picking a percentage', () => {
+    render(<MovimientoForm carteraId={1} venta={venta} />)
+    fireEvent.click(screen.getByRole('button', { name: '50 %' }))
+    fireEvent.change(screen.getByPlaceholderText('10'), { target: { value: '5' } })
+    expect((screen.getByPlaceholderText('10') as HTMLInputElement).value).toBe('5')
+  })
+
+  it('submits a venta with the chosen quantity and the price typed by the user', async () => {
+    crearMovimientoMock.mockReset()
+    render(<MovimientoForm carteraId={1} venta={venta} />)
+    await waitFor(() => expect(screen.getByDisplayValue('Inditex')).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: '50 %' }))
+    fireEvent.change(screen.getByPlaceholderText('150.00'), { target: { value: '48.2' } })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Registrar venta' }))
+
+    await waitFor(() => expect(crearMovimientoMock).toHaveBeenCalledWith(
+      expect.objectContaining({ cartera_id: 1, isin: 'ES0148396007', tipo: 'venta', cantidad: 7, precio: 48.2 }),
+    ))
+  })
+
+  it.each(['15', '0'])('rejects selling %s títulos of a 14-título position', async value => {
+    crearMovimientoMock.mockReset()
+    render(<MovimientoForm carteraId={1} venta={venta} />)
+    fireEvent.change(screen.getByPlaceholderText('10'), { target: { value } })
+    fireEvent.change(screen.getByPlaceholderText('150.00'), { target: { value: '48.2' } })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Registrar venta' }))
+
+    expect(await screen.findByText('La cantidad debe ser mayor que 0 y no superar 14')).toBeInTheDocument()
+    expect(crearMovimientoMock).not.toHaveBeenCalled()
+  })
+})

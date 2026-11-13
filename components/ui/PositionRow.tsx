@@ -1,5 +1,7 @@
 'use client'
+import { useState } from 'react'
 import Link from 'next/link'
+import { MovimientoForm } from '@/components/forms/MovimientoForm'
 import { usePreferences } from '@/lib/preferences'
 import { formatCurrency, formatEur, formatPct, maskAmount, signRent } from '@/lib/utils'
 import type { PositionViewModel } from '@/lib/portfolio-calc'
@@ -27,10 +29,13 @@ export interface PositionRowProps {
   onToggle: () => void
   onHover: () => void
   active: boolean
+  // Enables selling the position from its expanded detail.
+  carteraId?: number | null
 }
 
-export function PositionRow({ position: p, color, open, onToggle, onHover, active }: PositionRowProps) {
+export function PositionRow({ position: p, color, open, onToggle, onHover, active, carteraId }: PositionRowProps) {
   const { privacy, density } = usePreferences()
+  const [vendiendo, setVendiendo] = useState(false)
   const esDivisaExtranjera = p.moneda !== 'EUR'
   const vPad = density === 'compact' ? 10 : 16
   // Color follows the displayed (rounded) sign, so "+0,00 %" is never plum.
@@ -137,9 +142,30 @@ export function PositionRow({ position: p, color, open, onToggle, onHover, activ
             <Detalle etiqueta="Moneda" valor={p.moneda} />
             <Detalle etiqueta="ISIN" valor={p.isin} />
           </div>
-          <Link href={`/movimientos?isin=${encodeURIComponent(p.isin)}`} style={{ fontSize: 13, fontWeight: 500 }}>
-            Ver movimientos de {p.ticker} →
-          </Link>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+            <Link href={`/movimientos?isin=${encodeURIComponent(p.isin)}`} style={{ fontSize: 13, fontWeight: 500 }}>
+              Ver movimientos de {p.ticker} →
+            </Link>
+            {carteraId != null && (
+              <button
+                type="button"
+                onClick={() => setVendiendo(v => !v)}
+                className={vendiendo ? 'btn-ghost' : 'btn-primary'}
+              >
+                {vendiendo ? 'Cancelar' : 'Vender'}
+              </button>
+            )}
+          </div>
+          {carteraId != null && vendiendo && (
+            <div className="card p-5">
+              <p className="section-label mb-4">Vender {p.nombre}</p>
+              <MovimientoForm
+                carteraId={carteraId}
+                venta={{ isin: p.isin, cantidadTotal: p.cantidad }}
+                onSuccess={() => setVendiendo(false)}
+              />
+            </div>
+          )}
         </div>
       )}
     </div>
