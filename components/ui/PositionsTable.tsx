@@ -35,9 +35,10 @@ export interface PositionsTableProps {
   positions: PositionViewModel[]
   activeIsins?: Set<string> | null
   onHoverIsin?: (isin: string | null) => void
+  carteraId?: number | null
 }
 
-export function PositionsTable({ positions, activeIsins = null, onHoverIsin }: PositionsTableProps) {
+export function PositionsTable({ positions, activeIsins = null, onHoverIsin, carteraId }: PositionsTableProps) {
   const [sort, setSort] = useState<SortKey>('peso')
   const [open, setOpen] = useState<string | null>(null)
   const sorted = sortPositions(positions, sort)
@@ -85,6 +86,7 @@ export function PositionsTable({ positions, activeIsins = null, onHoverIsin }: P
             onToggle={() => setOpen(prev => (prev === p.isin ? null : p.isin))}
             onHover={() => onHoverIsin?.(p.isin)}
             active={activeIsins == null || activeIsins.has(p.isin)}
+            carteraId={carteraId}
           />
         ))}
         {sorted.length === 0 && (

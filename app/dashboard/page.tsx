@@ -110,6 +110,7 @@ export default function DashboardPage() {
               positions={positions}
               activeIsins={activeIsins}
               onHoverIsin={isin => setHover(isin == null ? {} : { isin })}
+              carteraId={carteraId}
             />
           </>
         )}

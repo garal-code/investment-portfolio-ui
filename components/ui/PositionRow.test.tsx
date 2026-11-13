@@ -1,5 +1,10 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+
+vi.mock('@/hooks/useCartera', () => ({
+  useCrearMovimiento: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useAutodescubrir: () => ({ data: undefined, isFetching: false }),
+}))
 import { PreferencesProvider } from '@/lib/preferences'
 import { formatCantidadPosicion, PositionRow } from './PositionRow'
 import type { PositionViewModel } from '@/lib/portfolio-calc'
@@ -166,5 +171,34 @@ describe('PositionRow — density', () => {
     renderRow({}, { open: true })
 
     await waitFor(() => expect(screen.getByRole('button', { name: /Microsoft/ })).toHaveStyle({ paddingTop: '10px', paddingBottom: '10px' }))
+  })
+})
+
+describe('PositionRow — vender', () => {
+  function renderOpen(carteraId?: number) {
+    return render(
+      <PreferencesProvider>
+        <PositionRow position={vm()} color="#2D6A5A" open onToggle={() => {}} onHover={() => {}} active carteraId={carteraId} />
+      </PreferencesProvider>,
+    )
+  }
+
+  it('shows a sell form prefilled with the position when "Vender" is clicked', () => {
+    renderOpen(1)
+    fireEvent.click(screen.getByRole('button', { name: 'Vender' }))
+    expect((screen.getByPlaceholderText('ES0148396007') as HTMLInputElement).value).toBe('US5949181045')
+    expect(screen.getByRole('button', { name: 'Registrar venta' })).toBeInTheDocument()
+  })
+
+  it('hides the sell form again with "Cancelar"', () => {
+    renderOpen(1)
+    fireEvent.click(screen.getByRole('button', { name: 'Vender' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
+    expect(screen.queryByRole('button', { name: 'Registrar venta' })).not.toBeInTheDocument()
+  })
+
+  it('has no "Vender" button without a cartera', () => {
+    renderOpen()
+    expect(screen.queryByRole('button', { name: 'Vender' })).not.toBeInTheDocument()
   })
 })
